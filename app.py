@@ -3,15 +3,25 @@ from query_data import query_rag
 from populate_database import main as populate_db
 import os
 
-def process_query(question: str) -> str:
+def process_query(question: str) -> tuple[str, gr.Dataframe]:
     if not os.path.exists("chroma"):
-        return "Error: Database not found. Please populate the database first."
-
+        return "Error: Database not found. Please populate the database first.", None
+    
     try:
-        response = query_rag(question)
-        return response
+        response, chunks = query_rag(question)
+        
+        # Create a DataFrame for display
+        df_data = [
+            [chunk['source'], chunk['content'], chunk['score']] 
+            for chunk in chunks
+        ]
+        
+        return response, gr.Dataframe(
+            headers=['Source', 'Content', 'Relevance Score'],
+            value=df_data
+        )
     except Exception as e:
-        return f"Error processing query: {str(e)}"
+        return f"Error processing query: {str(e)}", None
 
 def populate_database(reset: bool = False) -> str:
     try:
@@ -36,10 +46,15 @@ with gr.Blocks(title="Document Q&A System") as demo:
         )
         query_button = gr.Button("Submit Query")
         output = gr.Textbox(label="Response")
+        chunks_output = gr.Dataframe(
+            headers=['Source', 'Content', 'Relevance Score'],
+            label="Retrieved Chunks",
+            wrap=True
+        )
         query_button.click(
             fn=process_query,
             inputs=query_input,
-            outputs=output
+            outputs=[output, chunks_output]
         )
 
     with gr.Tab("Database Management"):
