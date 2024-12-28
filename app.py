@@ -36,7 +36,7 @@ def populate_database(reset: bool = False) -> str:
         return f"Error populating database: {str(e)}"
 
 # Create the Gradio interface
-with gr.Blocks(title="Document Q&A System") as demo:
+with gr.Blocks(title="AlbaraKa Document Q&A System (Call Center)") as demo:
     gr.Markdown("# Document Question & Answer System")
 
     with gr.Tab("Query Documents"):
@@ -69,4 +69,4 @@ with gr.Blocks(title="Document Q&A System") as demo:
         )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(share=True)
