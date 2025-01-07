@@ -22,14 +22,23 @@ def main():
     # Create CLI.
     parser = argparse.ArgumentParser()
     parser.add_argument("query_text", type=str, help="The query text.")
+    parser.add_argument("--model-type", type=str, help="Specify If model type is sentence-transformer")
+    parser.add_argument("--model-name", type=str, 
+                       default="emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
+                       help="HuggingFace or Ollama model name or local path")
     args = parser.parse_args()
-    query_text = args.query_text
-    query_rag(query_text)
+    
+    # Initialize embedding function with appropriate settings
+    embedding_function = get_embedding_function(
+        model_name_or_path=args.model_name,
+        use_local=bool(args.model_type)
+    )
+    
+    query_rag(args.query_text, embedding_function)
 
 
-def query_rag(query_text: str):
+def query_rag(query_text: str, embedding_function):
     # Prepare the DB.
-    embedding_function = get_embedding_function()
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
     # Search the DB.
