@@ -31,7 +31,7 @@ def main():
     # Initialize embedding function with appropriate settings
     embedding_function = get_embedding_function(
         model_name_or_path=args.model_name,
-        use_local=bool(args.model_type)
+        use_sentence_transformer=bool(args.model_type)
     )
     
     query_rag(args.query_text, embedding_function)

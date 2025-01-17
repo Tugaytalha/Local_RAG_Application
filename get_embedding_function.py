@@ -1,8 +1,8 @@
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from sentence_transformers import SentenceTransformer
 
-def get_embedding_function(model_name_or_path="emrecan/bert-base-turkish-cased-mean-nli-stsb-tr", use_sentence_transformer=True):
+def get_embedding_function(model_name_or_path="emrecan/convbert-base-turkish-mc4-cased-allnli_tr", use_sentence_transformer=True): #"emrecan/bert-base-turkish-cased-mean-nli-stsb-tr"
     """
     Get embedding function either from HuggingFace or local directory
     
