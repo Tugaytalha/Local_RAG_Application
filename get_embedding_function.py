@@ -1,4 +1,4 @@
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from sentence_transformers import SentenceTransformer
 
@@ -15,7 +15,7 @@ def get_embedding_function(model_name_or_path="emrecan/convbert-base-turkish-mc4
         model = SentenceTransformer(model_name_or_path)
         # Create HuggingFaceEmbeddings instance
         embeddings = HuggingFaceEmbeddings(
-            model_name=model_name,
+            model_name=model_name_or_path,
             model_kwargs={'device': 'cpu'},
             encode_kwargs={'normalize_embeddings': True}
         )

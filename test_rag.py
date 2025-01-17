@@ -4,11 +4,13 @@ import subprocess
 from docx import Document
 from query_data import query_rag, PROMPT_TEMPLATE
 from populate_database import clear_database, calculate_chunk_ids
+from get_embedding_function import get_embedding_function
 from langchain_community.llms.ollama import Ollama
 from langchain.schema.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.vectorstores.chroma import Chroma
 from langchain.document_loaders.pdf import PyPDFDirectoryLoader
+import pytest
 
 EVAL_PROMPT = """
 Expected Response: {expected_response}
@@ -40,10 +42,14 @@ EMBEDDING_MODELS = [
 ]
 
 
-def test_rag_with_embeddings(embedding_model_name, test_queries, document):
+@pytest.mark.parametrize("embedding_model_name", EMBEDDING_MODELS)
+def test_rag_with_embeddings(embedding_model_name):
     """
     Tests the RAG application with a specific embedding model.
     """
+    # Create a new DOCX document for the report
+    document = Document()
+    document.add_heading("RAG Application Test Report", 0)
 
     print(f"Testing with embedding: {embedding_model_name}")
     document.add_heading(f"Embedding: {embedding_model_name}", level=1)
@@ -57,7 +63,7 @@ def test_rag_with_embeddings(embedding_model_name, test_queries, document):
     subprocess.run(command, check=True)
 
     # Test with each query
-    for query, expected_response in test_queries.items():
+    for query, expected_response in TEST_QUERIES.items():
         try:
             response, retrieved_chunks = query_rag(query, get_embedding_function(embedding_model_name, True))
         except Exception as e:
@@ -81,6 +87,10 @@ def test_rag_with_embeddings(embedding_model_name, test_queries, document):
 
         document.add_paragraph("---")
 
+    # Save the document
+    document.save(f"rag_test_report_{embedding_model_name}.docx")
+    print(f"RAG test report generated: rag_test_report_{embedding_model_name}.docx")
+
 
 def evaluate_response(actual_response, expected_response):
     """
@@ -92,24 +102,3 @@ def evaluate_response(actual_response, expected_response):
     )
     evaluation_result = model.invoke(prompt)
     return evaluation_result.strip()
-
-
-def main():
-    """
-    Main function to run the RAG tests with multiple embeddings.
-    """
-    # Create a new DOCX document for the report
-    document = Document()
-    document.add_heading("RAG Application Test Report", 0)
-
-    # Run tests for each embedding model
-    for embedding_model_name in EMBEDDING_MODELS:
-        test_rag_with_embeddings(embedding_model_name, TEST_QUERIES, document)
-
-    # Save the document
-    document.save("rag_test_report.docx")
-    print("RAG test report generated: rag_test_report.docx")
-
-
-if __name__ == "__main__":
-    main()
