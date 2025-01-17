@@ -1,11 +1,11 @@
 import argparse
 import os
 import shutil
-from langchain.document_loaders.pdf import PyPDFDirectoryLoader
+from langchain_community.document_loaders.pdf import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
-from langchain.vectorstores.chroma import Chroma
+from langchain_community.vectorstores.chroma import Chroma
 
 
 CHROMA_PATH = "chroma"
@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--reset", action="store_true", help="Reset the database.")    
     parser.add_argument("--model-type", type=str, help="Specify If model type is sentence-transformer")
     parser.add_argument("--model-name", type=str, 
-                       default="emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
+                       default="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
                        help="HuggingFace or Ollama model name or local path")
     args = parser.parse_args()
     if args.reset:
@@ -29,13 +29,13 @@ def main():
     # Initialize embedding function with appropriate settings
     embedding_function = get_embedding_function(
         model_name_or_path=args.model_name,
-        use_local=bool(args.model_type)
+        use_sentence_transformer=bool(args.model_type)
     )
 
     # Create (or update) the data store.
     documents = load_documents()
     chunks = split_documents(documents)
-    add_to_chroma(chunks, embedding_function)
+    add_to_chroma(chunks=chunks, embedding_func=embedding_function)
 
 
 def load_documents():
