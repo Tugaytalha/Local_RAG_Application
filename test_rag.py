@@ -1,12 +1,10 @@
 import os
-import shutil
 import subprocess
 from docx import Document
 from query_data import query_rag, PROMPT_TEMPLATE
 from populate_database import clear_database
 from get_embedding_function import get_embedding_function
 from langchain_community.llms.ollama import Ollama
-import pytest
 
 EVAL_PROMPT = """
 Expected Response: {expected_response}
@@ -29,21 +27,20 @@ EMBEDDING_MODELS = [
     # "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
     # "emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
     "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
-    # "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
-    # "atasoglu/xlm-roberta-base-nli-stsb-tr",
-    # "atasoglu/mbert-base-cased-nli-stsb-tr",
-    # "Omerhan/intfloat-fine-tuned-14376-v4",
+    "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
+    "atasoglu/xlm-roberta-base-nli-stsb-tr",
+    "atasoglu/mbert-base-cased-nli-stsb-tr",
+    "Omerhan/intfloat-fine-tuned-14376-v4",
     # "atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
-    # "jinaai/jina-embeddings-v3",
+    "jinaai/jina-embeddings-v3",
 ]
 
-@pytest.mark.parametrize("embedding_model_name", EMBEDDING_MODELS)
 def test_rag_with_embeddings(embedding_model_name):
     """
     Tests the RAG application with a specific embedding model.
     """
     # Create a new DOCX document for the report
-    document = Document()  # Corrected: Now using docx.Document()
+    document = Document()
     document.add_heading("RAG Application Test Report", 0)
 
     print(f"Testing with embedding: {embedding_model_name}")
@@ -52,9 +49,15 @@ def test_rag_with_embeddings(embedding_model_name):
     # Reset and populate the database
     clear_database()
 
+    env = os.environ.copy()
+
+    # Set current venv path as working venv path
+    env['PATH'] = os.path.join(os.getcwd(), 'venv', 'bin') + ':' + env['PATH']
+
+
     # Initialize embedding function with appropriate settings
-    command = ["python", "populate_database.py", "--reset", "--model-type", "sentence-transformer", "--model-name", embedding_model_name]
-    subprocess.run(command, check=True)
+    command = ["./venv/scripts/python", "populate_database.py", "--reset", "--model-type", "sentence-transformer", "--model-name", embedding_model_name]
+    subprocess.run(command, check=True, env=env)
 
     # Test with each query
     for query, expected_response in TEST_QUERIES.items():
@@ -88,9 +91,19 @@ def evaluate_response(actual_response, expected_response):
     """
     Evaluates the actual response against the expected response using an LLM.
     """
-    model = Ollama(model="mistral")  # You can change the evaluation model if needed
+    model = Ollama(model="llama3.1:8b")
     prompt = EVAL_PROMPT.format(
         expected_response=expected_response, actual_response=actual_response
     )
     evaluation_result = model.invoke(prompt)
     return evaluation_result.strip()
+
+def main():
+    """
+    Runs the RAG tests for all embedding models.
+    """
+    for embedding_model_name in EMBEDDING_MODELS:
+        test_rag_with_embeddings(embedding_model_name)
+
+if __name__ == "__main__":
+    main()
