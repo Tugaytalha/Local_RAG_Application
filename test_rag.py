@@ -1,17 +1,8 @@
-import os
-import subprocess
 from docx import Document
-from query_data import query_rag, PROMPT_TEMPLATE
-from populate_database import clear_database
+from run_utils import populate_database, evaluate_response
 from get_embedding_function import get_embedding_function
-from langchain_community.llms.ollama import Ollama
+from populate_database import clear_database
 
-EVAL_PROMPT = """
-Expected Response: {expected_response}
-Actual Response: {actual_response}
----
-(Answer with 'true' or 'false') Does the actual response match the expected response? 
-"""
 
 TEST_QUERIES = {
     "müşteriler bankamız ATMleri harici hangi ATMleri kullanabilir?": "PTT",
@@ -46,19 +37,22 @@ def test_rag_with_embeddings(embedding_model_name):
     print(f"Testing with embedding: {embedding_model_name}")
     document.add_heading(f"Embedding: {embedding_model_name}", level=1)
 
-    env = os.environ.copy()
 
-    # Set current venv path as working venv path
-    env['PATH'] = os.path.join(os.getcwd(), 'venv', 'bin') + ':' + env['PATH']
+    clear_database()
 
+    # Populate the database
+    try:
+        populate_database(reset=True, model_name=embedding_model_name, model_type="sentence-transformer")
+    except Exception as e:
+        print(f"Error during database population: {e}")
+        document.add_paragraph(f"Error during database population: {e}")
+        return
 
-    # Initialize embedding function with appropriate settings
-    command = ["./venv/scripts/python", "populate_database.py", "--reset", "--model-type", "sentence-transformer", "--model-name", embedding_model_name]
-    subprocess.run(command, check=True, env=env)
 
     # Test with each query
     for query, expected_response in TEST_QUERIES.items():
         try:
+            from run_utils import query_rag
             response, retrieved_chunks = query_rag(query, get_embedding_function(embedding_model_name, True))
         except Exception as e:
             print(f"Error during query processing: {e}")
@@ -85,16 +79,6 @@ def test_rag_with_embeddings(embedding_model_name):
     document.save((f"rag_test_report_{embedding_model_name}.docx").replace("/", "_"))
     print(f"RAG test report generated: rag_test_report_{embedding_model_name}.docx")
 
-def evaluate_response(actual_response, expected_response):
-    """
-    Evaluates the actual response against the expected response using an LLM.
-    """
-    model = Ollama(model="llama3.1:8b")
-    prompt = EVAL_PROMPT.format(
-        expected_response=expected_response, actual_response=actual_response
-    )
-    evaluation_result = model.invoke(prompt)
-    return evaluation_result.strip()
 
 def main():
     """

@@ -1,33 +1,32 @@
 from query_data import query_rag
-from populate_database import main as populate_db
-import os
+from langchain_community.llms.ollama import Ollama
 
 
-def process_query(question: str) -> tuple[str, gr.Dataframe]:
-    if not os.path.exists("chroma"):
-        return "Error: Database not found. Please populate the database first.", None
-
-    try:
-        response, chunks = query_rag(question)
-
-        # Create a DataFrame for display
-        df_data = [
-            [chunk['source'], chunk['content'], chunk['score']]
-            for chunk in chunks
-        ]
-
-        return response, gr.Dataframe(
-            headers=['Source', 'Content', 'Relevance Score'],
-            value=df_data
-        )
-    except Exception as e:
-        return f"Error processing query: {str(e)}", None
+EVAL_PROMPT = """
+Expected Response: {expected_response}
+Actual Response: {actual_response}
+---
+(Answer with 'true' or 'false') Does the actual response match the expected response? 
+"""
 
 
-def populate_database(reset: bool = False, model_name: str = "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
+def evaluate_response(actual_response, expected_response):
+    """
+    Evaluates the actual response against the expected response using an LLM.
+    """
+    model = Ollama(model="llama3.2:3b")
+    prompt = EVAL_PROMPT.format(
+        expected_response=expected_response, actual_response=actual_response
+    )
+    evaluation_result = model.invoke(prompt)
+    return evaluation_result.strip()
+
+
+def populate_database(reset: bool = True, model_name: str = "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
                       model_type: str = "sentence-transformer") -> str:
     try:
         import sys
+        from populate_database import main as populate_db
 
         sys.argv = ["populate_database.py"]
         if reset:
@@ -35,6 +34,7 @@ def populate_database(reset: bool = False, model_name: str = "emrecan/bert-base-
         if model_name:
             sys.argv.extend(["--model-type", model_type, "--model-name", model_name])
 
+        print("I am using tyhis embedding in utils:", model_name)
         populate_db()
         return "Database populated successfully!"
     except Exception as e:

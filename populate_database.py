@@ -22,14 +22,21 @@ def main():
                        default="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
                        help="HuggingFace or Ollama model name or local path")
     args = parser.parse_args()
-    if args.reset:
+
+    _main(reset=args.reset, model_name=args.model_name, model_type=args.model_type)
+
+
+def _main(reset, model_name, model_type):
+    if reset:
         print("✨ Clearing Database")
         clear_database()
 
+    print("I am using this embedding in populate:", model_name)
+
     # Initialize embedding function with appropriate settings
     embedding_function = get_embedding_function(
-        model_name_or_path=args.model_name,
-        use_sentence_transformer=bool(args.model_type)
+        model_name_or_path=model_name,
+        use_sentence_transformer=bool(model_type)
     )
 
     # Create (or update) the data store.
@@ -81,6 +88,12 @@ def add_to_chroma(chunks: list[Document], embedding_func=get_embedding_function(
     else:
         print("✅ No new documents to add")
 
+    # Remove the database connection.
+    del db
+    import gc
+    gc.collect()
+
+
 
 def calculate_chunk_ids(chunks):
 
@@ -111,9 +124,25 @@ def calculate_chunk_ids(chunks):
     return chunks
 
 
+# def clear_database():
+#     print("🗑️ Clearing the database")
+#     global CHROMA_PATH
+#     while os.path.exists(CHROMA_PATH):
+#         print("🔥 Removing")
+#         # Remove the database directory forcefully.
+#         CHROMA_PATH += "1"
+#         print("✅ Database cleared")
+#     print("✅ Database cleared")
+
 def clear_database():
+    print("🗑️ Clearing the database")
+    global CHROMA_PATH
     if os.path.exists(CHROMA_PATH):
+        print("🔥 Removing")
+        # Remove the database directory forcefully.
         shutil.rmtree(CHROMA_PATH)
+        print("✅ Database cleared")
+    print("✅ Database cleared")
 
 
 if __name__ == "__main__":

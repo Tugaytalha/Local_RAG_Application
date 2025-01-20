@@ -57,12 +57,17 @@ def query_rag(query_text: str, embedding_function):
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
     prompt = prompt_template.format(context=context_text, question=query_text)
 
-    model = Ollama(model="llama3.1:8b")
+    model = Ollama(model="llama3.2:3b")
     response_text = model.invoke(prompt)
 
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
     print(formatted_response)
+
+    # Release the DB.
+    del db
+    from gc import collect
+    collect()
     
     return response_text, chunks_with_metadata
 
