@@ -1,39 +1,6 @@
 import gradio as gr
-from query_data import query_rag
-from populate_database import main as populate_db
-import os
+from run_utils import *
 
-def process_query(question: str) -> tuple[str, gr.Dataframe]:
-    if not os.path.exists("chroma"):
-        return "Error: Database not found. Please populate the database first.", None
-    
-    try:
-        response, chunks = query_rag(question)
-        
-        # Create a DataFrame for display
-        df_data = [
-            [chunk['source'], chunk['content'], chunk['score']] 
-            for chunk in chunks
-        ]
-        
-        return response, gr.Dataframe(
-            headers=['Source', 'Content', 'Relevance Score'],
-            value=df_data
-        )
-    except Exception as e:
-        return f"Error processing query: {str(e)}", None
-
-def populate_database(reset: bool = False) -> str:
-    try:
-        import sys
-        if reset:
-            sys.argv = ["populate_database.py", "--reset"]
-        else:
-            sys.argv = ["populate_database.py"]
-        populate_db()
-        return "Database populated successfully!"
-    except Exception as e:
-        return f"Error populating database: {str(e)}"
 
 # Create the Gradio interface
 with gr.Blocks(title="AlbaraKa Document Q&A System (Call Center)") as demo:

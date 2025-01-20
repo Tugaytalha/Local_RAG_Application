@@ -46,9 +46,6 @@ def test_rag_with_embeddings(embedding_model_name):
     print(f"Testing with embedding: {embedding_model_name}")
     document.add_heading(f"Embedding: {embedding_model_name}", level=1)
 
-    # Reset and populate the database
-    clear_database()
-
     env = os.environ.copy()
 
     # Set current venv path as working venv path
@@ -84,7 +81,8 @@ def test_rag_with_embeddings(embedding_model_name):
         document.add_paragraph("---")
 
     # Save the document
-    document.save(f"rag_test_report_{embedding_model_name}.docx")
+
+    document.save((f"rag_test_report_{embedding_model_name}.docx").replace("/", "_"))
     print(f"RAG test report generated: rag_test_report_{embedding_model_name}.docx")
 
 def evaluate_response(actual_response, expected_response):
