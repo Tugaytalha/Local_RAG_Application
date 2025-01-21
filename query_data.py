@@ -22,7 +22,7 @@ def main():
     # Create CLI.
     parser = argparse.ArgumentParser()
     parser.add_argument("query_text", type=str, help="The query text.")
-    parser.add_argument("--model-type", type=str, help="Specify If model type is sentence-transformer")
+    parser.add_argument("--model-type", type=str, help="Specify If model type is sentence_transformer")
     parser.add_argument("--model-name", type=str, 
                        default="jinaai/jina-embeddings-v3",
                        help="HuggingFace or Ollama model name or local path")

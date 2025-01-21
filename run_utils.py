@@ -23,7 +23,7 @@ def evaluate_response(actual_response, expected_response):
 
 
 def populate_database(reset: bool = True, model_name: str = "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
-                      model_type: str = "sentence-transformer") -> str:
+                      model_type: str = "sentence_transformer") -> str:
 
     import sys
     from populate_database import main as populate_db

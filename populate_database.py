@@ -15,7 +15,7 @@ def main():
     # Check if the database should be cleared (using the --clear flag).
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset", action="store_true", help="Reset the database.")    
-    parser.add_argument("--model-type", type=str, help="Specify If model type is sentence-transformer")
+    parser.add_argument("--model-type", type=str, help="Specify If model type is sentence_transformer")
     parser.add_argument("--model-name", type=str, 
                        default="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
                        help="HuggingFace or Ollama model name or local path")
@@ -132,6 +132,12 @@ def clear_database():
     Chroma(persist_directory=CHROMA_PATH).delete_collection()
     print("✅ Database cleared")
 
+# def clear_database():
+#     print("🗑️ Clearing the database")
+#     # Delete database directory
+#     import shutil
+#     shutil.rmtree(CHROMA_PATH)
+#     print("✅ Database cleared")
 
 if __name__ == "__main__":
     main()

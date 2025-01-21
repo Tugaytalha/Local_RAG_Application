@@ -15,15 +15,15 @@ TEST_QUERIES = {
 }
 
 EMBEDDING_MODELS = [
-    # "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
-    # "emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
-            # "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
-            # "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
-            # "atasoglu/xlm-roberta-base-nli-stsb-tr",
-            # "atasoglu/mbert-base-cased-nli-stsb-tr",
-    "Omerhan/intfloat-fine-tuned-14376-v4",
-    # "atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
-    "jinaai/jina-embeddings-v3",
+    "emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
+    "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
+    #         "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
+    #         "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
+    #         "atasoglu/xlm-roberta-base-nli-stsb-tr",
+    #         "atasoglu/mbert-base-cased-nli-stsb-tr",
+    # "Omerhan/intfloat-fine-tuned-14376-v4",
+    "atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
+    # "jinaai/jina-embeddings-v3",
 ]
 
 def test_rag_with_embeddings(embedding_model_name):
@@ -38,15 +38,16 @@ def test_rag_with_embeddings(embedding_model_name):
     document.add_heading(f"Embedding: {embedding_model_name}", level=1)
 
     # Populate the database
+    populate_database(reset=True, model_name=embedding_model_name, model_type="sentence_transformer")
 
-    populate_database(reset=True, model_name=embedding_model_name, model_type="sentence-transformer")
-
+    # Get the embedding function
+    embedding = get_embedding_function(embedding_model_name, "sentence_transformer")
 
     # Test with each query
     for query, expected_response in TEST_QUERIES.items():
         try:
             from run_utils import query_rag
-            response, retrieved_chunks = query_rag(query, get_embedding_function(embedding_model_name, "sentence_transformers"))
+            response, retrieved_chunks = query_rag(query, embedding)
         except Exception as e:
             print(f"Error during query processing: {e}")
             response = "Error during query processing"
