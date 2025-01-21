@@ -6,12 +6,12 @@ from populate_database import clear_database
 
 TEST_QUERIES = {
     "müşteriler bankamız ATMleri harici hangi ATMleri kullanabilir?": "PTT",
-    # "Hareketsiz hesap nedir?": "Müşterimizin 1 yılı aşkın süre zarfında hesabına ilişkin para çıkışı yapmaması durumunda hesap hareketsiz konuma alınmaktadır. Ek9",
-    # "Debit Kart kesin olarak kapatılmak istendiğinde Çağrı Merkezi personeli nasıl bir yol izlemelidir? > Hangi durumlarda Debit Kart geçici olarak kapatılır?": "İstenen kartı kesin olarak kapatsa da derhal yenisinin başvurusunu almalıdır. > Ek8",
-    # "müşterinin hangi durumlarda para transferi işlemini Çağrı Merkezinden yapması mümkündür?": "Son 20 işlem veya kayıtlı işlemleri Çağrı Merkezinden yapabilir. Güvenlik gereği başka para transferi işlemlerini yapamaz.",
-    # "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": "Evet",
-    # "ATM'lerde yapılan işlemlerde hangi koşullarda müşteriden komisyon alınır?": "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
-    # "Kredi kartım suya düşse ne olur?": "Buna cevap veremiyorum.",
+    "Hareketsiz hesap nedir?": "Müşterimizin 1 yılı aşkın süre zarfında hesabına ilişkin para çıkışı yapmaması durumunda hesap hareketsiz konuma alınmaktadır. Ek9",
+    "Debit Kart kesin olarak kapatılmak istendiğinde Çağrı Merkezi personeli nasıl bir yol izlemelidir? > Hangi durumlarda Debit Kart geçici olarak kapatılır?": "İstenen kartı kesin olarak kapatsa da derhal yenisinin başvurusunu almalıdır. > Ek8",
+    "müşterinin hangi durumlarda para transferi işlemini Çağrı Merkezinden yapması mümkündür?": "Son 20 işlem veya kayıtlı işlemleri Çağrı Merkezinden yapabilir. Güvenlik gereği başka para transferi işlemlerini yapamaz.",
+    "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": "Evet",
+    "ATM'lerde yapılan işlemlerde hangi koşullarda müşteriden komisyon alınır?": "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
+    "Kredi kartım suya düşse ne olur?": "Buna cevap veremiyorum.",
 }
 
 EMBEDDING_MODELS = [
@@ -21,7 +21,7 @@ EMBEDDING_MODELS = [
             # "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
             # "atasoglu/xlm-roberta-base-nli-stsb-tr",
             # "atasoglu/mbert-base-cased-nli-stsb-tr",
-    # "Omerhan/intfloat-fine-tuned-14376-v4",
+    "Omerhan/intfloat-fine-tuned-14376-v4",
     # "atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
     "jinaai/jina-embeddings-v3",
 ]

@@ -22,10 +22,9 @@ def get_embedding_function(model_name_or_path="atasoglu/roberta-small-turkish-cl
         # Create HuggingFaceEmbeddings instance
         embeddings = HuggingFaceEmbeddings(
             model_name=model_name_or_path,
-            encode_kwargs={'normalize_embeddings': True,
-                           "device": 'cuda',
-                           "trust_remote_code": True
+            encode_kwargs={'normalize_embeddings': True
                            },
+            model_kwargs={'trust_remote_code': True}
         )
     else:
         embeddings = OllamaEmbeddings(model="bge-m3")
