@@ -1,11 +1,9 @@
 import argparse
-import os
-import shutil
 from langchain_community.document_loaders.pdf import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
-from langchain_community.vectorstores.chroma import Chroma
+from langchain_chroma import Chroma
 
 
 CHROMA_PATH = "chroma"
@@ -36,7 +34,7 @@ def _main(reset, model_name, model_type):
     # Initialize embedding function with appropriate settings
     embedding_function = get_embedding_function(
         model_name_or_path=model_name,
-        use_sentence_transformer=bool(model_type)
+        model_type=model_type
     )
 
     # Create (or update) the data store.
@@ -88,12 +86,6 @@ def add_to_chroma(chunks: list[Document], embedding_func=get_embedding_function(
     else:
         print("✅ No new documents to add")
 
-    # Remove the database connection.
-    del db
-    import gc
-    gc.collect()
-
-
 
 def calculate_chunk_ids(chunks):
 
@@ -137,11 +129,8 @@ def calculate_chunk_ids(chunks):
 def clear_database():
     print("🗑️ Clearing the database")
     global CHROMA_PATH
-    if os.path.exists(CHROMA_PATH):
-        print("🔥 Removing")
-        # Remove the database directory forcefully.
-        shutil.rmtree(CHROMA_PATH)
-        print("✅ Database cleared")
+    # Remove the database with db.delete_collection()
+    Chroma(persist_directory=CHROMA_PATH).delete_collection()
     print("✅ Database cleared")
 
 

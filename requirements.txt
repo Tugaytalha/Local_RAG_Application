@@ -5,3 +5,4 @@ pytest
 langchain-community
 gradio
 sentence-transformers>=2.2.2
+langchain_chroma>=0.1.2

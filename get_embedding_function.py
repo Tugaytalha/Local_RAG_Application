@@ -1,30 +1,33 @@
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.embeddings.ollama import OllamaEmbeddings
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+from langchain_ollama.embeddings import OllamaEmbeddings
 from sentence_transformers import SentenceTransformer
 
-def get_embedding_function(model_name_or_path="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr", use_sentence_transformer=True): #"emrecan/bert-base-turkish-cased-mean-nli-stsb-tr"
+
+def get_embedding_function(model_name_or_path="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
+                           model_type="sentence-transformer"):  # "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr"
     """
     Get embedding function either from HuggingFace or local directory
     
     Args:
         model_name_or_path (str): Model name or local path
-        use_sentence_transformer (bool): Whether to use sentence transformer
+        model_type (str): Model type (sentence-transformer or ollama)
 
         Returns:
         embeddings: Embedding function
     """
     if model_name_or_path is None:
         model_name_or_path = "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr"
-    if use_sentence_transformer:
+
+    if model_type == "sentence-transformer":
         # Create HuggingFaceEmbeddings instance
         embeddings = HuggingFaceEmbeddings(
             model_name=model_name_or_path,
-            encode_kwargs={'normalize_embeddings': True}
+            encode_kwargs={'normalize_embeddings': True,
+                           "device": 'cuda',
+                           "trust_remote_code": True
+                           },
         )
     else:
         embeddings = OllamaEmbeddings(model="bge-m3")
-    
-    
+
     return embeddings
-
-
