@@ -17,13 +17,13 @@ TEST_QUERIES = {
 EMBEDDING_MODELS = [
     "emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
     "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
-    #         "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
-    #         "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
-    #         "atasoglu/xlm-roberta-base-nli-stsb-tr",
-    #         "atasoglu/mbert-base-cased-nli-stsb-tr",
-    # "Omerhan/intfloat-fine-tuned-14376-v4",
+            "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
+            "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
+            "atasoglu/xlm-roberta-base-nli-stsb-tr",
+            "atasoglu/mbert-base-cased-nli-stsb-tr",
+    "Omerhan/intfloat-fine-tuned-14376-v4",
     "atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
-    # "jinaai/jina-embeddings-v3",
+    "jinaai/jina-embeddings-v3",
 ]
 
 def test_rag_with_embeddings(embedding_model_name):
@@ -43,6 +43,7 @@ def test_rag_with_embeddings(embedding_model_name):
     # Get the embedding function
     embedding = get_embedding_function(embedding_model_name, "sentence_transformer")
 
+    all_sources = []
     # Test with each query
     for query, expected_response in TEST_QUERIES.items():
         try:
@@ -58,6 +59,9 @@ def test_rag_with_embeddings(embedding_model_name):
         # Take sources
         sources = [chunk['source'] for chunk in retrieved_chunks]
 
+        # Add sources to the list
+        all_sources.append(sources)
+
         # Add results to the document
         document.add_paragraph(f"Query: {query}")
         document.add_paragraph(f"Expected Response: {expected_response}")
@@ -72,8 +76,12 @@ def test_rag_with_embeddings(embedding_model_name):
 
         document.add_paragraph("---")
 
-    # Save the document
+    # Add sources to the end of the document
+    document.add_heading("Sources", level=1)
+    for sources in all_sources:
+        document.add_paragraph(f"Sources: {sources}")
 
+    # Save the document
     document.save((f"rag_test_report_{embedding_model_name}.docx").replace("/", "_"))
     print(f"RAG test report generated: rag_test_report_{embedding_model_name}.docx")
 
