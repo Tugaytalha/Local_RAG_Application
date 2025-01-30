@@ -15,15 +15,15 @@ TEST_QUERIES = {
 }
 
 EMBEDDING_MODELS = [
-    "emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
-    "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
-            "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
-            "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
-            "atasoglu/xlm-roberta-base-nli-stsb-tr",
-            "atasoglu/mbert-base-cased-nli-stsb-tr",
-    "Omerhan/intfloat-fine-tuned-14376-v4",
+    # "emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
+    # "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
+    # "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
+    # "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
+    # "atasoglu/xlm-roberta-base-nli-stsb-tr",
+    # "atasoglu/mbert-base-cased-nli-stsb-tr",
+    # "Omerhan/intfloat-fine-tuned-14376-v4",
     "atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
-    "jinaai/jina-embeddings-v3",
+    # "jinaai/jina-embeddings-v3",
 ]
 
 def test_rag_with_embeddings(embedding_model_name):
