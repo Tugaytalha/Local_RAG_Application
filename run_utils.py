@@ -2,7 +2,6 @@ from query_data import query_rag                               # to use all util
 from get_embedding_function import get_embedding_function      # to use all utils with the same import
 from langchain_ollama import OllamaLLM as Ollama
 import sys
-#import populate_database(main) and get_all_chunk_embeddings from populate_database.py
 from populate_database import main as populate_db, get_all_chunk_embeddings
 
 

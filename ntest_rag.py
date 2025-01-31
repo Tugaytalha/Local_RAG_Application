@@ -1,7 +1,8 @@
 from docx import Document
 import umap
 import numpy as np
-from run_utils import populate_database, evaluate_response, query_rag, get_embedding_function
+import matplotlib.pyplot as plt
+from run_utils import populate_database, evaluate_response, query_rag, get_embedding_function, get_all_chunk_embeddings
 
 QUERIES = {
     "müşteriler bankamız ATMleri harici hangi ATMleri kullanabilir?":
@@ -39,26 +40,87 @@ EMBEDDING_MODELS = [
 ]
 
 
+def visualize_queries(queries, query_embeddings, all_chunk_embeddings, retrieved_embeddings_list, expected_embeddings_list, model_name):
+    """
+    Creates subplots for each query, visualizing its relationship with all chunks, retrieved chunks, and expected chunks.
+    """
+    num_queries = len(queries)
+    cols = 2  # Number of columns for subplots
+    rows = (num_queries + 1) // cols  # Compute required rows dynamically
+
+    # Reduce dimensions using UMAP
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
+    all_embeddings = np.vstack((query_embeddings, all_chunk_embeddings))
+    reduced_embeddings = reducer.fit_transform(all_embeddings)
+
+    # Extract 2D positions
+    query_positions = reduced_embeddings[:len(query_embeddings)]
+    all_chunk_positions = reduced_embeddings[len(query_embeddings):]
+
+    fig, axes = plt.subplots(rows, cols, figsize=(12, 6 * rows))  # Dynamic plot size
+    axes = axes.flatten()
+
+    for i, (query, query_embedding) in enumerate(zip(queries, query_positions)):
+        ax = axes[i]
+
+        # Plot all chunks in grey
+        ax.scatter(all_chunk_positions[:, 0], all_chunk_positions[:, 1], c='grey', label='All Chunks', alpha=0.3)
+
+        # Plot query in red
+        ax.scatter(query_embedding[0], query_embedding[1], c='red', label='Query', s=100, edgecolor='black')
+
+        # Plot retrieved chunks in yellow
+        for retrieved_embedding in retrieved_embeddings_list[i]:
+            idx = np.where((all_chunk_embeddings == retrieved_embedding).all(axis=1))[0][0]
+            ax.scatter(all_chunk_positions[idx, 0], all_chunk_positions[idx, 1], c='yellow', label='Retrieved Chunk', s=70, edgecolor='black')
+
+        # Plot expected chunks in green
+        for expected_embedding in expected_embeddings_list[i]:
+            idx = np.where((all_chunk_embeddings == expected_embedding).all(axis=1))[0][0]
+            ax.scatter(all_chunk_positions[idx, 0], all_chunk_positions[idx, 1], c='green', label='Expected Chunk', s=70, edgecolor='black')
+
+        ax.set_title(f"Query {i+1}: {query[:40]}...")  # Show first 40 chars of the query
+        ax.legend(loc='upper right')
+        ax.grid(True)
+
+    plt.tight_layout()
+    plt.savefig(f"query_chunks_visualization_{model_name}.png")
+    plt.close()
+
+
 def try_rag_with_embeddings(embedding_model_name):
     """
     Tests the RAG application with a specific embedding model.
     """
-    # Create a new DOCX document for the report
+    # Create a Word document to store the test results
     document = Document()
     document.add_heading("RAG Application Test Report", 0)
 
     print(f"Testing with embedding: {embedding_model_name}")
     document.add_heading(f"Embedding: {embedding_model_name}", level=1)
 
-    # Populate the database
+    # Populate the database with the specified embedding model
     populate_database(reset=True, model_name=embedding_model_name, model_type="sentence_transformer")
 
-    # Get the embedding function
-    embedding = get_embedding_function(embedding_model_name, "sentence_transformer")
+    # Initialize embedding function with appropriate settings
+    embedding = get_embedding_function(
+        model_name_or_path=embedding_model_name,
+        model_type="sentence_transformer"
+    )
 
-    all_sources = []
+    # Get all chunk embeddings from the database
+    all_chunk_data = get_all_chunk_embeddings()
+    all_chunk_embeddings = np.array(all_chunk_data["embeddings"])
+
+    query_embeddings = []
+    retrieved_embeddings_list = []
+    expected_embeddings_list = []
+
     # Test with each query
     for query, expected_response_chunk in QUERIES.items():
+        query_embedding = embedding(query).reshape(1, -1)
+        query_embeddings.append(query_embedding)
+
         try:
             response, retrieved_chunks = query_rag(query, embedding)
         except Exception as e:
@@ -66,35 +128,28 @@ def try_rag_with_embeddings(embedding_model_name):
             response = "Error during query processing"
             retrieved_chunks = []
 
+        retrieved_embeddings = np.array([embedding(chunk['content']) for chunk in retrieved_chunks])
+        retrieved_embeddings_list.append(retrieved_embeddings)
+
+        expected_embeddings = []
+        for source in expected_response_chunk[1]:
+            for chunk in all_chunk_data["ids"]:
+                if chunk == source:
+                    expected_embeddings.append(all_chunk_data["embeddings"][all_chunk_data["ids"].index(chunk)])
+        expected_embeddings = np.array(expected_embeddings)
+        expected_embeddings_list.append(expected_embeddings)
+
         evaluation_result = evaluate_response(response, expected_response_chunk[0])
 
-        # Take sources
-        sources = [chunk['source'] for chunk in retrieved_chunks]
-
-        # Add sources to the list
-        all_sources.append(sources)
-
-        # Add results to the document
         document.add_paragraph(f"Query: {query}")
         document.add_paragraph(f"Expected Response: {expected_response_chunk[0]}")
         document.add_paragraph(f"Actual Response: {response}")
         document.add_paragraph(f"Evaluation: {evaluation_result}")
-        document.add_paragraph(f"Sources: {sources}")
-
-        # Add retrieved chunks to the document
-        document.add_paragraph("Retrieved Chunks:")
-        for chunk in retrieved_chunks:
-            document.add_paragraph(
-                f" - Source: {chunk['source']}, Content: {chunk['content']}, Score: {chunk['score']}")
-
         document.add_paragraph("---")
 
-    # Add sources to the end of the document
-    document.add_heading("Sources", level=1)
-    for sources in all_sources:
-        document.add_paragraph(f"Sources: {sources}")
+    visualize_queries(QUERIES.keys(), np.vstack(query_embeddings), all_chunk_embeddings, retrieved_embeddings_list,
+                      expected_embeddings_list, embedding_model_name)
 
-    # Save the document
     document.save((f"rag_test_report_{embedding_model_name}.docx").replace("/", "_"))
     print(f"RAG test report generated: rag_test_report_{embedding_model_name}.docx")
 
