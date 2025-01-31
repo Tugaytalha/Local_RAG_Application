@@ -34,6 +34,6 @@ def populate_database(reset: bool = True, model_name: str = "emrecan/bert-base-t
     if model_name:
         sys.argv.extend(["--model-type", model_type, "--model-name", model_name])
 
-    print("I am using tyhis embedding in utils:", model_name)
+    print("I am using this embedding in utils:", model_name)
     populate_db()
     return "Database populated successfully!"

@@ -45,7 +45,8 @@ def _main(reset, model_name, model_type):
 
 def load_documents():
     document_loader = DirectoryLoader(
-        DATA_PATH,)
+        DATA_PATH,
+    use_multithreading=True,)
     return document_loader.load()
 
 
@@ -59,7 +60,7 @@ def split_documents(documents: list[Document]):
     return text_splitter.split_documents(documents)
 
 
-def add_to_chroma(chunks: list[Document], embedding_func=get_embedding_function()):
+def add_to_chroma(chunks: list[Document], embedding_func):
     # Load the existing database.
     db = Chroma(
         persist_directory=CHROMA_PATH, embedding_function=embedding_func
@@ -82,7 +83,9 @@ def add_to_chroma(chunks: list[Document], embedding_func=get_embedding_function(
     if len(new_chunks):
         print(f"👉 Adding new documents: {len(new_chunks)}")
         new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
+        print("You know")
         db.add_documents(new_chunks, ids=new_chunk_ids)
+        print("✅ added New documents ")
     else:
         print("✅ No new documents to add")
 

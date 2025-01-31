@@ -7,6 +7,8 @@ from get_embedding_function import get_embedding_function
 
 CHROMA_PATH = "chroma"
 
+VERBOSE = False
+
 PROMPT_TEMPLATE = """
 Answer the question based only on the following context:
 
@@ -28,12 +30,14 @@ def main():
                        help="HuggingFace or Ollama model name or local path")
     args = parser.parse_args()
 
+
+
     # Initialize embedding function with appropriate settings
     embedding_function = get_embedding_function(
         model_name_or_path=args.model_name,
         model_type=args.model_type
     )
-    
+
     query_rag(args.query_text, embedding_function)
 
 
@@ -57,12 +61,13 @@ def query_rag(query_text: str, embedding_function):
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
     prompt = prompt_template.format(context=context_text, question=query_text)
 
-    model = Ollama(model="llama3.2:3b")
+    model = Ollama(model="llama3.1")
     response_text = model.invoke(prompt)
 
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
-    print(formatted_response)
+    if VERBOSE:
+        print(formatted_response)
     
     return response_text, chunks_with_metadata
 
