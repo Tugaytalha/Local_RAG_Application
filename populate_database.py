@@ -5,20 +5,18 @@ from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 
-
 CHROMA_PATH = "chroma"
 DATA_PATH = "data"
 
 
 def main():
-
     # Check if the database should be cleared (using the --clear flag).
     parser = argparse.ArgumentParser()
-    parser.add_argument("--reset", action="store_true", help="Reset the database.")    
+    parser.add_argument("--reset", action="store_true", help="Reset the database.")
     parser.add_argument("--model-type", type=str, help="Specify If model type is sentence_transformer")
-    parser.add_argument("--model-name", type=str, 
-                       default="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
-                       help="HuggingFace or Ollama model name or local path")
+    parser.add_argument("--model-name", type=str,
+                        default="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
+                        help="HuggingFace or Ollama model name or local path")
     args = parser.parse_args()
 
     _main(reset=args.reset, model_name=args.model_name, model_type=args.model_type)
@@ -43,10 +41,29 @@ def _main(reset, model_name, model_type):
     add_to_chroma(chunks=chunks, embedding_func=embedding_function)
 
 
+def get_all_chunk_embeddings():
+    """
+    Get all chunk embeddings from the database.
+
+    Returns:
+        A list of chunk IDs and embeddings.
+    """
+
+    # Load the existing database.
+    db = Chroma(
+        persist_directory=CHROMA_PATH
+    )
+
+    # Get all the documents.
+    embeddings = db.get(include=["embeddings"])
+
+    return embeddings
+
+
 def load_documents():
     document_loader = DirectoryLoader(
         DATA_PATH,
-    use_multithreading=True,)
+        use_multithreading=True, )
     return document_loader.load()
 
 
@@ -90,7 +107,6 @@ def add_to_chroma(chunks: list[Document], embedding_func):
 
 
 def calculate_chunk_ids(chunks):
-
     # This will create IDs like "data/monopoly.pdf:6:2"
     # Page Source : Page Number : Chunk Index
 
@@ -134,6 +150,7 @@ def clear_database():
     # Remove the database with db.delete_collection()
     Chroma(persist_directory=CHROMA_PATH).delete_collection()
     print("✅ Database cleared")
+
 
 # def clear_database():
 #     print("🗑️ Clearing the database")

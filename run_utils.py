@@ -1,6 +1,9 @@
-from query_data import query_rag                            # to use all utils with the same import
-from get_embedding_function import get_embedding_function   # to use all utils with the same import
+from query_data import query_rag                               # to use all utils with the same import
+from get_embedding_function import get_embedding_function      # to use all utils with the same import
 from langchain_ollama import OllamaLLM as Ollama
+import sys
+#import populate_database(main) and get_all_chunk_embeddings from populate_database.py
+from populate_database import main as populate_db, get_all_chunk_embeddings
 
 
 EVAL_PROMPT = """
@@ -25,9 +28,6 @@ def evaluate_response(actual_response, expected_response):
 
 def populate_database(reset: bool = True, model_name: str = "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
                       model_type: str = "sentence_transformer") -> str:
-
-    import sys
-    from populate_database import main as populate_db
 
     sys.argv = ["populate_database.py"]
     if reset:
