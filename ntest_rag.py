@@ -1,37 +1,41 @@
 from docx import Document
-
+import umap
+import numpy as np
 from get_embedding_function import get_embedding_function
 from run_utils import populate_database, evaluate_response
 
 QUERIES = {
     "müşteriler bankamız ATMleri harici hangi ATMleri kullanabilir?":
-        ["PTT", "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:44"],
+        ["PTT", ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:44"]],
     "Hareketsiz hesap nedir?":
         [
             "Müşterimizin 1 yılı aşkın süre zarfında hesabına ilişkin para çıkışı yapmaması durumunda hesap hareketsiz konuma alınmaktadır. Ek9",
-            "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:49"],
+            ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:49"]],
     "Debit Kart kesin olarak kapatılmak istendiğinde Çağrı Merkezi personeli nasıl bir yol izlemelidir? > Hangi durumlarda Debit Kart geçici olarak kapatılır?":
-        ["İstenen kartı kesin olarak kapatsa da derhal yenisinin başvurusunu almalıdır. > Ek8", ""],
-    "müşterinin hangi durumlarda para transferi işlemini Çağrı Merkezinden yapması mümkündür?": [
-        "Son 20 işlem veya kayıtlı işlemleri Çağrı Merkezinden yapabilir. Güvenlik gereği başka para transferi işlemlerini yapamaz.",
-        ""],
-    "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": ["Evet",
-                                                                                                             ""],
+        ["İstenen kartı kesin olarak kapatsa da derhal yenisinin başvurusunu almalıdır. > Ek8",
+         ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:31",
+          "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:9"]],
+    # "müşterinin hangi durumlarda para transferi işlemini Çağrı Merkezinden yapması mümkündür?": [
+    #     "Son 20 işlem veya kayıtlı işlemleri Çağrı Merkezinden yapabilir. Güvenlik gereği başka para transferi işlemlerini yapamaz.",
+    #     [""]],
+    "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": [
+        "Evet",
+        ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:11"]],
     "ATM'lerde yapılan işlemlerde hangi koşullarda müşteriden komisyon alınır?": [
         "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
-        ""],
-    "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", ""],
+        ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:45", "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:46"]],
+    "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", []],
 }
 
 EMBEDDING_MODELS = [
-    "emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
-    "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
-    "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
-    "atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
+    #####"emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
+    ###"emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
+    ###"atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
+    ###"atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
     "atasoglu/xlm-roberta-base-nli-stsb-tr",
     "atasoglu/mbert-base-cased-nli-stsb-tr",
     "Omerhan/intfloat-fine-tuned-14376-v4",
-    "atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
+    ###"atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
     "jinaai/jina-embeddings-v3",
 ]
 
@@ -55,7 +59,7 @@ def try_rag_with_embeddings(embedding_model_name):
 
     all_sources = []
     # Test with each query
-    for query, expected_response in QUERIES.items():
+    for query, expected_response_chunk in QUERIES.items():
         try:
             from run_utils import query_rag
             response, retrieved_chunks = query_rag(query, embedding)
@@ -64,7 +68,7 @@ def try_rag_with_embeddings(embedding_model_name):
             response = "Error during query processing"
             retrieved_chunks = []
 
-        evaluation_result = evaluate_response(response, expected_response)
+        evaluation_result = evaluate_response(response, expected_response_chunk[0])
 
         # Take sources
         sources = [chunk['source'] for chunk in retrieved_chunks]
@@ -74,7 +78,7 @@ def try_rag_with_embeddings(embedding_model_name):
 
         # Add results to the document
         document.add_paragraph(f"Query: {query}")
-        document.add_paragraph(f"Expected Response: {expected_response}")
+        document.add_paragraph(f"Expected Response: {expected_response_chunk[0]}")
         document.add_paragraph(f"Actual Response: {response}")
         document.add_paragraph(f"Evaluation: {evaluation_result}")
         document.add_paragraph(f"Sources: {sources}")
