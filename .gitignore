@@ -7,3 +7,4 @@ data
 .gradio
 rag_test*
 ~*
+.gitignore
