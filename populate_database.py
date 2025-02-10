@@ -101,8 +101,10 @@ def add_to_chroma(chunks: list[Document], embedding_func):
         print(f"👉 Adding new documents: {len(new_chunks)}")
         new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
 
-        # Add chunks asynchronously.
-        asyncio.run(db.aadd_documents(new_chunks, ids=new_chunk_ids))
+        db.add_documents(new_chunks, ids=new_chunk_ids)
+
+        # # Add chunks asynchronously.
+        # asyncio.run(db.aadd_documents(new_chunks, ids=new_chunk_ids))
 
         print("✅ added New documents ")
     else:

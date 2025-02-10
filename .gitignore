@@ -6,6 +6,7 @@ data
 .idea
 .gradio
 rag_test*
+results/rag_test*
 ~*
 .gitignore
 debug_test_rag.ipynb

@@ -1,10 +1,13 @@
+import time
 from docx import Document
 import umap
 import numpy as np
 import matplotlib.pyplot as plt
 from run_utils import populate_database, evaluate_response, query_rag, get_embedding_function, get_all_chunk_embeddings
 
-QUERIES = {
+RESULTS_PATH = "results/"
+
+QUERIES_CUSTOMER = {
     "müşteriler bankamız ATMleri harici hangi ATMleri kullanabilir?":
         ["PTT", ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:44"]],
     "Hareketsiz hesap nedir?":
@@ -27,6 +30,54 @@ QUERIES = {
         "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
         ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:45", "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:46"]],
     "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", []],
+}
+
+QUERIES = {
+    "30 Eylül 2024 itibarıyla Bankanın toplam varlıkları ne kadardır?": [
+        "VARLIKLAR TOPLAMI 152.836.357 144.170.432 297.006.789 123.217.699 108.951.796 232.169.495",
+        [] #"1.pdf:None:101","1.pdf:None:102"
+    ],
+    "30 Eylül 2024 itibarıyla Bankanın nakdi kredileri ne kadardır?": [
+        "2.1 Krediler  (6) 77.433.485 51.342.362 128.775.847 68.988.788 35.631.066 104.619.854",
+        [] #"1.pdf:None:42"
+    ],
+    "30 Eylül 2024 itibarıyla Bankanın itfa edilmiş maliyeti ile ölçülen finansal varlıkları ne kadardır?": [
+        "2.3 İtfa Edilmiş Maliyeti ile Ölçülen Finansal Varlıklar (4) 12.715.079 16.363.818 29.078.897 11.533.660 17.318.883 28.852.543",
+        [] #"1.pdf:None:43","1.pdf:None:44"
+    ],
+    "30 Eylül 2024 itibarıyla Bankanın maddi duran varlıkları (net) ne kadardır?": [
+        "V. MADDİ DURAN VARLIKLAR (Net)  (10) 5.094.234 79.469 5.173.703 4.448.035 66.241 4.514.276",
+        [] #"1.pdf:None:51"
+    ],
+    "30 Eylül 2024 itibarıyla Bankanın toplanan fonlar ne kadardır?": [
+        "YÜKÜMLÜLÜKLER I. TOPLANAN FONLAR (1) 103.207.064 93.228.495 196.435.559 81.304.541 80.501.315 161.805.856",
+        [] #"1.pdf:None:55"
+    ],
+    "30 Eylül 2024 itibarıyla Bankanın alınan krediler ne kadardır?": [
+        "II. ALINAN KREDİLER (2) 14.156.677 40.012.913 54.169.590 2.178.308 28.357.631 30.535.939",
+        [] #"1.pdf:None:56"
+    ],
+     "30 Eylül 2024 itibarıyla Bankanın özkaynakları ne kadardır?": [
+        "XIV. ÖZKAYNAKLAR (10) 15.923.036 135.682 16.058.718 13.326.608 60.811 13.387.419",
+        [] #"1.pdf:None:62","1.pdf:None:63"
+    ],
+     "2024 yılı 3. çeyrekte kar payı gelirleri ne kadar gerçekleşmiştir?": [
+        "I. KÂR PAYI GELİRLERİ (1) 28.879.308 11.541.042 10.614.731 4.608.499",
+        [] #"2.pdf:None:1"
+    ],
+    "2024 yılı 3. çeyrekte kar payı giderleri ne kadar gerçekleşmiştir?": [
+        "II. KAR PAYI GİDERLERİ (-) (2) 23.419.002 6.652.405 9.869.893 2.733.651",
+        [] #"2.pdf:None:6"
+    ],
+    "2024 yılı 3. çeyrekte personel giderleri ne kadar gerçekleşmiştir?": [
+        "XI. PERSONEL GIDERLERI (-) (6) 3.463.260 1.836.508 1.011.553 633.109",
+        [] #"2.pdf:None:44"
+    ],
+    "Bankanın 2024 yılı üçüncü çeyrekteki dönem net karı ne kadardır?": [
+        "XXV. DÖNEM NET KARI/ZARARI (XIV+XXIV) (12) 2.664.097 2.460.503 793.617 967.310",
+        [] #"2.pdf:None:49"
+    ]
+
 }
 
 EMBEDDING_MODELS = [
@@ -92,7 +143,7 @@ def visualize_queries(queries, query_embeddings, all_chunk_embeddings, retrieved
         ax.grid(True)
 
     plt.tight_layout()
-    plt.savefig((f"query_chunks_visualization_{model_name}.png").replace(" ", "_").replace("/", "_"))
+    plt.savefig(RESULTS_PATH + (f"query_chunks_visualization_{model_name}.png").replace(" ", "_").replace("/", "_"))
     plt.close()
 
 
@@ -100,6 +151,8 @@ def try_rag_with_embeddings(embedding_model_name):
     """
     Tests the RAG application with a specific embedding model.
     """
+    start_time = time.time()
+
     # Create a Word document to store the test results
     document = Document()
     document.add_heading("RAG Application Test Report", 0)
@@ -109,6 +162,8 @@ def try_rag_with_embeddings(embedding_model_name):
 
     # Populate the database with the specified embedding model
     populate_database(reset=True, model_name=embedding_model_name, model_type="sentence_transformer")
+    database_end_time = time.time()
+    print(f"Database populated in {database_end_time - start_time:.2f} seconds")
 
     # Initialize embedding function with appropriate settings
     embedding = get_embedding_function(
@@ -158,7 +213,11 @@ def try_rag_with_embeddings(embedding_model_name):
     visualize_queries(QUERIES.keys(), np.vstack(query_embeddings), all_chunk_embeddings, retrieved_embeddings_list,
                       expected_embeddings_list, embedding_model_name)
 
-    document.save((f"rag_test_report_{embedding_model_name}.docx").replace("/", "_"))
+    end_time = time.time()
+    print(f"Test completed in {end_time - start_time:.2f} seconds")
+    document.add_paragraph(f"Test completed in {end_time - start_time:.2f} seconds")
+
+    document.save(RESULTS_PATH + (f"rag_test_report_{embedding_model_name}.docx").replace("/", "_"))
     print(f"RAG test report generated: rag_test_report_{embedding_model_name}.docx")
 
 
