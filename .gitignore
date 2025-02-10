@@ -8,3 +8,4 @@ data
 rag_test*
 ~*
 .gitignore
+debug_test_rag.ipynb

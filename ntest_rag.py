@@ -15,16 +15,18 @@ QUERIES = {
         ["İstenen kartı kesin olarak kapatsa da derhal yenisinin başvurusunu almalıdır. > Ek8",
          ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:31",
           "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:9"]],
+
     # "müşterinin hangi durumlarda para transferi işlemini Çağrı Merkezinden yapması mümkündür?": [
     #     "Son 20 işlem veya kayıtlı işlemleri Çağrı Merkezinden yapabilir. Güvenlik gereği başka para transferi işlemlerini yapamaz.",
     #     [""]],
-    "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": [
-        "Evet",
-        ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:11"]],
-    "ATM'lerde yapılan işlemlerde hangi koşullarda müşteriden komisyon alınır?": [
-        "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
-        ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:45", "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:46"]],
-    "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", []],
+
+    # "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": [
+    #     "Evet",
+    #     ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:11"]],
+    # "ATM'lerde yapılan işlemlerde hangi koşullarda müşteriden komisyon alınır?": [
+    #     "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
+    #     ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:45", "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:46"]],
+    # "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", []],
 }
 
 EMBEDDING_MODELS = [
@@ -32,15 +34,18 @@ EMBEDDING_MODELS = [
     ###"emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
     ###"atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
     ###"atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
-    "atasoglu/xlm-roberta-base-nli-stsb-tr",
-    "atasoglu/mbert-base-cased-nli-stsb-tr",
-    "Omerhan/intfloat-fine-tuned-14376-v4",
+    # "atasoglu/xlm-roberta-base-nli-stsb-tr",
+    # "atasoglu/mbert-base-cased-nli-stsb-tr",
+    # "Omerhan/intfloat-fine-tuned-14376-v4",
     ###"atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
     "jinaai/jina-embeddings-v3",
 ]
 
 
 def visualize_queries(queries, query_embeddings, all_chunk_embeddings, retrieved_embeddings_list, expected_embeddings_list, model_name):
+    """
+    Creates subplots for each query, visualizing its relationship with all chunks, retrieved chunks, and expected chunks.
+    """
     """
     Creates subplots for each query, visualizing its relationship with all chunks, retrieved chunks, and expected chunks.
     """
@@ -70,21 +75,23 @@ def visualize_queries(queries, query_embeddings, all_chunk_embeddings, retrieved
         ax.scatter(query_embedding[0], query_embedding[1], c='red', label='Query', s=100, edgecolor='black')
 
         # Plot retrieved chunks in yellow
-        for retrieved_embedding in retrieved_embeddings_list[i]:
-            idx = np.where((all_chunk_embeddings == retrieved_embedding).all(axis=1))[0][0]
-            ax.scatter(all_chunk_positions[idx, 0], all_chunk_positions[idx, 1], c='yellow', label='Retrieved Chunk', s=70, edgecolor='black')
+        retrived_to_pilot = reducer.transform(retrieved_embeddings_list[i])
+        ax.scatter(retrived_to_pilot[:, 0], retrived_to_pilot[:, 1], c='yellow', label='Retrieved Chunks', s=70,
+                   edgecolor='black')
 
         # Plot expected chunks in green
-        for expected_embedding in expected_embeddings_list[i]:
-            idx = np.where((all_chunk_embeddings == expected_embedding).all(axis=1))[0][0]
-            ax.scatter(all_chunk_positions[idx, 0], all_chunk_positions[idx, 1], c='green', label='Expected Chunk', s=70, edgecolor='black')
+        expected_to_pilot = reducer.transform(expected_embeddings_list[i])
+        ax.scatter(expected_to_pilot[:, 0], expected_to_pilot[:, 1], c='green', label='Expected Chunks', s=70,
+                   edgecolor='black')
 
-        ax.set_title(f"Query {i+1}: {query[:40]}...")  # Show first 40 chars of the query
+        # Decide expected chunks retrieved or not
+        expectation_list = [exp in retrieved_embeddings_list[i] for exp in expected_embeddings_list[i]]
+        ax.set_title(f"Query {i + 1}: {query[:40]}{'...' if len(query) > 40 else ''}, R1:{any(expectation_list)}, RA:{all(expectation_list)}")  # Show first 40 chars of the query
         ax.legend(loc='upper right')
         ax.grid(True)
 
     plt.tight_layout()
-    plt.savefig(f"query_chunks_visualization_{model_name}.png")
+    plt.savefig((f"query_chunks_visualization_{model_name}.png").replace(" ", "_").replace("/", "_"))
     plt.close()
 
 
@@ -118,7 +125,7 @@ def try_rag_with_embeddings(embedding_model_name):
 
     # Test with each query
     for query, expected_response_chunk in QUERIES.items():
-        query_embedding = embedding(query).reshape(1, -1)
+        query_embedding = np.array(embedding.embed_query(query)).reshape(1, -1)
         query_embeddings.append(query_embedding)
 
         try:
@@ -128,7 +135,7 @@ def try_rag_with_embeddings(embedding_model_name):
             response = "Error during query processing"
             retrieved_chunks = []
 
-        retrieved_embeddings = np.array([embedding(chunk['content']) for chunk in retrieved_chunks])
+        retrieved_embeddings = np.array([embedding.embed_query(chunk['content']) for chunk in retrieved_chunks])
         retrieved_embeddings_list.append(retrieved_embeddings)
 
         expected_embeddings = []
