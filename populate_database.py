@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
@@ -87,8 +88,7 @@ def add_to_chroma(chunks: list[Document], embedding_func):
     chunks_with_ids = calculate_chunk_ids(chunks)
 
     # Add or Update the documents.
-    existing_items = db.get(include=[])  # IDs are always included by default
-    existing_ids = set(existing_items["ids"])
+    existing_ids = set(db.get(include=[])["ids"])  # IDs are always included by default
     print(f"Number of existing documents in DB: {len(existing_ids)}")
 
     # Only add documents that don't exist in the DB.
@@ -100,7 +100,10 @@ def add_to_chroma(chunks: list[Document], embedding_func):
     if len(new_chunks):
         print(f"👉 Adding new documents: {len(new_chunks)}")
         new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
-        db.add_documents(new_chunks, ids=new_chunk_ids)
+
+        # Add chunks asynchronously.
+        asyncio.run(db.aadd_documents(new_chunks, ids=new_chunk_ids))
+
         print("✅ added New documents ")
     else:
         print("✅ No new documents to add")
