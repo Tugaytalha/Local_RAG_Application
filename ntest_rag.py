@@ -20,13 +20,13 @@ QUERIES = {
     #     "Son 20 işlem veya kayıtlı işlemleri Çağrı Merkezinden yapabilir. Güvenlik gereği başka para transferi işlemlerini yapamaz.",
     #     [""]],
 
-    # "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": [
-    #     "Evet",
-    #     ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:11"]],
-    # "ATM'lerde yapılan işlemlerde hangi koşullarda müşteriden komisyon alınır?": [
-    #     "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
-    #     ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:45", "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:46"]],
-    # "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", []],
+    "kayıp çalışntı durumunda kapatılan karta bağlı HGS talimatı yeni verilen karta otomatik devrolur mu?": [
+        "Evet",
+        ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:11"]],
+    "ATM'lerde yapılan işlemlerde hangi koşullarda müşteriden komisyon alınır?": [
+        "Bankamız ATM'lerinde bankamız kartı ile yapılan hiçbir işlemde komisyon alınmaz, başka banka ATMlerinden işlem yapılması halinde komisyon alınır. Ek7",
+        ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:45", "data\Çağrı merkezi chatbot için bilgiler v2.docx:None:46"]],
+    "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", []],
 }
 
 EMBEDDING_MODELS = [
@@ -34,9 +34,9 @@ EMBEDDING_MODELS = [
     ###"emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
     ###"atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
     ###"atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
-    # "atasoglu/xlm-roberta-base-nli-stsb-tr",
-    # "atasoglu/mbert-base-cased-nli-stsb-tr",
-    # "Omerhan/intfloat-fine-tuned-14376-v4",
+    "atasoglu/xlm-roberta-base-nli-stsb-tr",
+    "atasoglu/mbert-base-cased-nli-stsb-tr",
+    "Omerhan/intfloat-fine-tuned-14376-v4",
     ###"atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
     "jinaai/jina-embeddings-v3",
 ]
@@ -80,9 +80,10 @@ def visualize_queries(queries, query_embeddings, all_chunk_embeddings, retrieved
                    edgecolor='black')
 
         # Plot expected chunks in green
-        expected_to_pilot = reducer.transform(expected_embeddings_list[i])
-        ax.scatter(expected_to_pilot[:, 0], expected_to_pilot[:, 1], c='green', label='Expected Chunks', s=70,
-                   edgecolor='black')
+        if len(expected_embeddings_list[i]) != 0:
+            expected_to_pilot = reducer.transform(expected_embeddings_list[i])
+            ax.scatter(expected_to_pilot[:, 0], expected_to_pilot[:, 1], c='green', label='Expected Chunks', s=70,
+                       edgecolor='black')
 
         # Decide expected chunks retrieved or not
         expectation_list = [exp in retrieved_embeddings_list[i] for exp in expected_embeddings_list[i]]
