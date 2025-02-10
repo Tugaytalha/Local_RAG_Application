@@ -32,7 +32,7 @@ QUERIES_CUSTOMER = {
     "Kredi kartım suya düşse ne olur?": ["Buna cevap veremiyorum.", []],
 }
 
-QUERIES = {
+QUERIES_FINANCIAL = {
     "30 Eylül 2024 itibarıyla Bankanın toplam varlıkları ne kadardır?": [
         "VARLIKLAR TOPLAMI 152.836.357 144.170.432 297.006.789 123.217.699 108.951.796 232.169.495",
         [] #"1.pdf:None:101","1.pdf:None:102"
@@ -45,51 +45,53 @@ QUERIES = {
         "2.3 İtfa Edilmiş Maliyeti ile Ölçülen Finansal Varlıklar (4) 12.715.079 16.363.818 29.078.897 11.533.660 17.318.883 28.852.543",
         [] #"1.pdf:None:43","1.pdf:None:44"
     ],
-    "30 Eylül 2024 itibarıyla Bankanın maddi duran varlıkları (net) ne kadardır?": [
-        "V. MADDİ DURAN VARLIKLAR (Net)  (10) 5.094.234 79.469 5.173.703 4.448.035 66.241 4.514.276",
-        [] #"1.pdf:None:51"
-    ],
-    "30 Eylül 2024 itibarıyla Bankanın toplanan fonlar ne kadardır?": [
-        "YÜKÜMLÜLÜKLER I. TOPLANAN FONLAR (1) 103.207.064 93.228.495 196.435.559 81.304.541 80.501.315 161.805.856",
-        [] #"1.pdf:None:55"
-    ],
-    "30 Eylül 2024 itibarıyla Bankanın alınan krediler ne kadardır?": [
-        "II. ALINAN KREDİLER (2) 14.156.677 40.012.913 54.169.590 2.178.308 28.357.631 30.535.939",
-        [] #"1.pdf:None:56"
-    ],
-     "30 Eylül 2024 itibarıyla Bankanın özkaynakları ne kadardır?": [
-        "XIV. ÖZKAYNAKLAR (10) 15.923.036 135.682 16.058.718 13.326.608 60.811 13.387.419",
-        [] #"1.pdf:None:62","1.pdf:None:63"
-    ],
-     "2024 yılı 3. çeyrekte kar payı gelirleri ne kadar gerçekleşmiştir?": [
-        "I. KÂR PAYI GELİRLERİ (1) 28.879.308 11.541.042 10.614.731 4.608.499",
-        [] #"2.pdf:None:1"
-    ],
-    "2024 yılı 3. çeyrekte kar payı giderleri ne kadar gerçekleşmiştir?": [
-        "II. KAR PAYI GİDERLERİ (-) (2) 23.419.002 6.652.405 9.869.893 2.733.651",
-        [] #"2.pdf:None:6"
-    ],
-    "2024 yılı 3. çeyrekte personel giderleri ne kadar gerçekleşmiştir?": [
-        "XI. PERSONEL GIDERLERI (-) (6) 3.463.260 1.836.508 1.011.553 633.109",
-        [] #"2.pdf:None:44"
-    ],
-    "Bankanın 2024 yılı üçüncü çeyrekteki dönem net karı ne kadardır?": [
-        "XXV. DÖNEM NET KARI/ZARARI (XIV+XXIV) (12) 2.664.097 2.460.503 793.617 967.310",
-        [] #"2.pdf:None:49"
-    ]
+    # "30 Eylül 2024 itibarıyla Bankanın maddi duran varlıkları (net) ne kadardır?": [
+    #     "V. MADDİ DURAN VARLIKLAR (Net)  (10) 5.094.234 79.469 5.173.703 4.448.035 66.241 4.514.276",
+    #     [] #"1.pdf:None:51"
+    # ],
+    # "30 Eylül 2024 itibarıyla Bankanın toplanan fonlar ne kadardır?": [
+    #     "YÜKÜMLÜLÜKLER I. TOPLANAN FONLAR (1) 103.207.064 93.228.495 196.435.559 81.304.541 80.501.315 161.805.856",
+    #     [] #"1.pdf:None:55"
+    # ],
+    # "30 Eylül 2024 itibarıyla Bankanın alınan krediler ne kadardır?": [
+    #     "II. ALINAN KREDİLER (2) 14.156.677 40.012.913 54.169.590 2.178.308 28.357.631 30.535.939",
+    #     [] #"1.pdf:None:56"
+    # ],
+    #  "30 Eylül 2024 itibarıyla Bankanın özkaynakları ne kadardır?": [
+    #     "XIV. ÖZKAYNAKLAR (10) 15.923.036 135.682 16.058.718 13.326.608 60.811 13.387.419",
+    #     [] #"1.pdf:None:62","1.pdf:None:63"
+    # ],
+    #  "2024 yılı 3. çeyrekte kar payı gelirleri ne kadar gerçekleşmiştir?": [
+    #     "I. KÂR PAYI GELİRLERİ (1) 28.879.308 11.541.042 10.614.731 4.608.499",
+    #     [] #"2.pdf:None:1"
+    # ],
+    # "2024 yılı 3. çeyrekte kar payı giderleri ne kadar gerçekleşmiştir?": [
+    #     "II. KAR PAYI GİDERLERİ (-) (2) 23.419.002 6.652.405 9.869.893 2.733.651",
+    #     [] #"2.pdf:None:6"
+    # ],
+    # "2024 yılı 3. çeyrekte personel giderleri ne kadar gerçekleşmiştir?": [
+    #     "XI. PERSONEL GIDERLERI (-) (6) 3.463.260 1.836.508 1.011.553 633.109",
+    #     [] #"2.pdf:None:44"
+    # ],
+    # "Bankanın 2024 yılı üçüncü çeyrekteki dönem net karı ne kadardır?": [
+    #     "XXV. DÖNEM NET KARI/ZARARI (XIV+XXIV) (12) 2.664.097 2.460.503 793.617 967.310",
+    #     [] #"2.pdf:None:49"
+    # ]
 
 }
+
+QUERIES = QUERIES_FINANCIAL
 
 EMBEDDING_MODELS = [
     #####"emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
     ###"emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
     ###"atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
     ###"atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
-    # "atasoglu/xlm-roberta-base-nli-stsb-tr",
-    # "atasoglu/mbert-base-cased-nli-stsb-tr",
-    "Omerhan/intfloat-fine-tuned-14376-v4",
-    ###"atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
+    ## "atasoglu/xlm-roberta-base-nli-stsb-tr",
+    ## "atasoglu/mbert-base-cased-nli-stsb-tr",
     "jinaai/jina-embeddings-v3",
+    # "Omerhan/intfloat-fine-tuned-14376-v4",
+    ###"atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
 ]
 
 
@@ -178,6 +180,7 @@ def try_rag_with_embeddings(embedding_model_name):
     query_embeddings = []
     retrieved_embeddings_list = []
     expected_embeddings_list = []
+    all_sources = []
 
     # Test with each query
     for query, expected_response_chunk in QUERIES.items():
@@ -202,16 +205,33 @@ def try_rag_with_embeddings(embedding_model_name):
         expected_embeddings = np.array(expected_embeddings)
         expected_embeddings_list.append(expected_embeddings)
 
+        # Take sources
+        sources = [chunk['source'] for chunk in retrieved_chunks]
+
+        # Add sources to the list
+        all_sources.append(sources)
+
         evaluation_result = evaluate_response(response, expected_response_chunk[0])
 
+        # Add results to the document
         document.add_paragraph(f"Query: {query}")
         document.add_paragraph(f"Expected Response: {expected_response_chunk[0]}")
         document.add_paragraph(f"Actual Response: {response}")
         document.add_paragraph(f"Evaluation: {evaluation_result}")
+        document.add_paragraph(f"Sources: {sources}")
+        document.add_paragraph("Retrieved Chunks:")
+        for chunk in retrieved_chunks:
+            document.add_paragraph(
+                f" - Source: {chunk['source']}, Content: {chunk['content']}, Score: {chunk['score']}")
         document.add_paragraph("---")
 
     visualize_queries(QUERIES.keys(), np.vstack(query_embeddings), all_chunk_embeddings, retrieved_embeddings_list,
                       expected_embeddings_list, embedding_model_name)
+
+    # Add sources to the end of the document
+    document.add_heading("Sources", level=1)
+    for sources in all_sources:
+        document.add_paragraph(f"Sources: {sources}")
 
     end_time = time.time()
     print(f"Test completed in {end_time - start_time:.2f} seconds")

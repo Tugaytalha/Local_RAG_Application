@@ -1,5 +1,5 @@
 import argparse
-import asyncio
+# import asyncio
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
