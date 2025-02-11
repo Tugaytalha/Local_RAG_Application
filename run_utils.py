@@ -2,7 +2,7 @@ from query_data import query_rag                               # Don't delete, t
 from get_embedding_function import get_embedding_function      # Don't delete, to use all utils with the same import
 from langchain_ollama import OllamaLLM as Ollama
 import sys
-from populate_database import main as populate_db, get_all_chunk_embeddings
+from populate_database import _main as populate_db, get_all_chunk_embeddings
 
 
 EVAL_PROMPT = """
@@ -27,13 +27,14 @@ def evaluate_response(actual_response, expected_response):
 
 def populate_database(reset: bool = True, model_name: str = "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
                       model_type: str = "sentence_transformer") -> str:
+    """
+    Populates the database with the given model.
 
-    sys.argv = ["populate_database.py"]
-    if reset:
-        sys.argv.append("--reset")
-    if model_name:
-        sys.argv.extend(["--model-type", model_type, "--model-name", model_name])
-
+    :param reset: reset the database
+    :param model_name: Embedding model name to use in populating the database
+    :param model_type: Embedding model type (sentence_transformer or ollama)
+    :return: Success message
+    """
     print("I am using this embedding in utils:", model_name)
-    populate_db()
+    populate_db(reset=reset, model_name=model_name, model_type=model_type)
     return "Database populated successfully!"
