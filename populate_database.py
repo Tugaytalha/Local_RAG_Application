@@ -1,5 +1,5 @@
 import argparse
-# import asyncio
+import asyncio
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
@@ -79,7 +79,7 @@ def split_documents(documents: list[Document]):
     return text_splitter.split_documents(documents)
 
 
-def add_to_chroma(chunks: list[Document], embedding_func):
+async def add_to_chroma(chunks: list[Document], embedding_func):
     # Load the existing database.
     db = Chroma(
         persist_directory=CHROMA_PATH, embedding_function=embedding_func
@@ -102,10 +102,16 @@ def add_to_chroma(chunks: list[Document], embedding_func):
         print(f"👉 Adding new documents: {len(new_chunks)}")
         new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
 
-        db.add_documents(new_chunks, ids=new_chunk_ids, show_progress=VERBOSE)
+        # # Add chunks synchronously.
+        # db.add_documents(new_chunks, ids=new_chunk_ids, show_progress=VERBOSE)
 
-        # # Add chunks asynchronously.
-        # asyncio.run(db.aadd_documents(new_chunks, ids=new_chunk_ids))
+        # Chunk the chunks by 1000's and Add chunks asynchronously.
+        chunk_size = 1000
+        tasks = [
+            db.add_documents(new_chunks[i:i + chunk_size], ids=new_chunk_ids[i:i + chunk_size], show_progress=VERBOSE)
+            for i in range(0, len(new_chunks), chunk_size)
+        ]
+        await asyncio.gather(*tasks)
 
         print("✅ added New documents ")
     else:
