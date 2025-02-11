@@ -7,6 +7,10 @@ from run_utils import populate_database, evaluate_response, query_rag, get_embed
 
 RESULTS_PATH = "results/"
 
+FROM_XLSX = True
+XLSX_PATH = "queries.xlsx"
+
+
 QUERIES_CUSTOMER = {
     "müşteriler bankamız ATMleri harici hangi ATMleri kullanabilir?":
         ["PTT", ["data\Çağrı merkezi chatbot için bilgiler v2.docx:None:44"]],
@@ -80,7 +84,7 @@ QUERIES_FINANCIAL = {
 
 }
 
-QUERIES = QUERIES_FINANCIAL
+QUERIES = QUERIES_CUSTOMER
 
 EMBEDDING_MODELS = [
     #####"emrecan/convbert-base-turkish-mc4-cased-allnli_tr",
@@ -237,7 +241,7 @@ def try_rag_with_embeddings(embedding_model_name):
     print(f"Test completed in {end_time - start_time:.2f} seconds")
     document.add_paragraph(f"Test completed in {end_time - start_time:.2f} seconds")
 
-    document.save(RESULTS_PATH + (f"rag_test_report_{embedding_model_name}.docx").replace("/", "_"))
+    document.save(RESULTS_PATH + f"rag_test_report_{embedding_model_name}.docx".replace("/", "_"))
     print(f"RAG test report generated: rag_test_report_{embedding_model_name}.docx")
 
 
@@ -245,6 +249,15 @@ def main():
     """
     Runs the RAG tests for all embedding models.
     """
+    if FROM_XLSX:
+        global QUERIES
+        import pandas as pd
+        # Read queries from the Excel file
+        queries_df = pd.read_excel(XLSX_PATH)
+        # Use question col as key and answer col as value
+        QUERIES = dict(zip(queries_df["question"], queries_df["answer"]))
+        print(f"Queries read from the Excel file: {QUERIES}")
+
     for embedding_model_name in EMBEDDING_MODELS:
         try_rag_with_embeddings(embedding_model_name)
 
