@@ -5,11 +5,16 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
+from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
 
 VERBOSE = True
 CHROMA_PATH = "chroma"
 DATA_PATH = "data"
+MODEL_SIZE_MB = 1100  # TODO: Make this dynamic based on the model size
 
+# Initialize NVML for GPU memory management
+nvmlInit()
+gpu_handle = nvmlDeviceGetHandleByIndex(0)  # Select GPU 0
 
 def main():
     # Check if the database should be cleared (using the --clear flag).
@@ -40,7 +45,7 @@ def _main(reset, model_name, model_type):
     # Create (or update) the data store.
     documents = load_documents()
     chunks = split_documents(documents)
-    add_to_chroma(chunks=chunks, embedding_func=embedding_function)
+    asyncio.run(add_to_chroma(chunks=chunks, embedding_func=embedding_function))
 
 
 def get_all_chunk_embeddings():
@@ -79,44 +84,54 @@ def split_documents(documents: list[Document]):
     return text_splitter.split_documents(documents)
 
 
+async def get_available_gpu_memory():
+    """Returns the available GPU memory in MB."""
+    info = nvmlDeviceGetMemoryInfo(gpu_handle)
+    return (info.free // (1024 * 1024))  # Convert to MB
+
+
 async def add_to_chroma(chunks: list[Document], embedding_func):
-    # Load the existing database.
-    db = Chroma(
-        persist_directory=CHROMA_PATH, embedding_function=embedding_func
-    )
+    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_func)
 
-    # Calculate Page IDs.
     chunks_with_ids = calculate_chunk_ids(chunks)
-
-    # Add or Update the documents.
-    existing_ids = set(db.get(include=[])["ids"])  # IDs are always included by default
+    existing_ids = set(db.get(include=[])["ids"])
     print(f"Number of existing documents in DB: {len(existing_ids)}")
 
-    # Only add documents that don't exist in the DB.
-    new_chunks = []
-    for chunk in chunks_with_ids:
-        if chunk.metadata["id"] not in existing_ids:
-            new_chunks.append(chunk)
-
-    if len(new_chunks):
-        print(f"👉 Adding new documents: {len(new_chunks)}")
-        new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
-
-        # # Add chunks synchronously.
-        # db.add_documents(new_chunks, ids=new_chunk_ids, show_progress=VERBOSE)
-
-        # Chunk the chunks by 1000's and Add chunks asynchronously.
-        chunk_size = 1000
-        tasks = [
-            db.add_documents(new_chunks[i:i + chunk_size], ids=new_chunk_ids[i:i + chunk_size], show_progress=VERBOSE)
-            for i in range(0, len(new_chunks), chunk_size)
-        ]
-        await asyncio.gather(*tasks)
-
-        print("✅ added New documents ")
-    else:
+    new_chunks = [chunk for chunk in chunks_with_ids if chunk.metadata["id"] not in existing_ids]
+    if not new_chunks:
         print("✅ No new documents to add")
+        return
 
+    print(f"👉 Adding new documents: {len(new_chunks)}")
+
+    # Estimate GPU memory and determine batch size dynamically
+    total_gpu_memory = await get_available_gpu_memory()
+    batch_size = min(1000, total_gpu_memory // MODEL_SIZE_MB)
+
+    print(f"Estimated available GPU memory: {total_gpu_memory} MB")
+    print(f"Using batch size: {batch_size}")
+
+    new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
+    semaphore = asyncio.Semaphore(2)  # Control concurrent tasks (Adjust as needed)
+
+    async def process_batch(start, end):
+        """Process a batch of chunks asynchronously with GPU memory control."""
+        async with semaphore:
+            try:
+                await db.add_documents(
+                    new_chunks[start:end],
+                    ids=new_chunk_ids[start:end],
+                    show_progress=VERBOSE
+                )
+            except Exception as e:
+                print(f"❌ Error processing batch {start}-{end}: {e}")
+
+    tasks = [
+        process_batch(i, min(i + batch_size, len(new_chunks)))
+        for i in range(0, len(new_chunks), batch_size)
+    ]
+
+    await asyncio.gather(*tasks)
 
 def calculate_chunk_ids(chunks):
     # This will create IDs like "data/monopoly.pdf:6:2"
