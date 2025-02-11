@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import psutil
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
@@ -12,9 +13,15 @@ CHROMA_PATH = "chroma"
 DATA_PATH = "data"
 MODEL_SIZE_MB = 1100  # TODO: Make this dynamic based on the model size
 
-# Initialize NVML for GPU memory management
-nvmlInit()
-gpu_handle = nvmlDeviceGetHandleByIndex(0)  # Select GPU 0
+# Try to initialize NVML for GPU memory management
+gpu_available = False
+try:
+    nvmlInit()
+    gpu_handle = nvmlDeviceGetHandleByIndex(0)  # Select GPU 0
+    gpu_available = True
+except Exception:
+    print("⚠ No CUDA device detected. Falling back to CPU processing.")
+
 
 def main():
     # Check if the database should be cleared (using the --clear flag).
@@ -45,7 +52,7 @@ def _main(reset, model_name, model_type):
     # Create (or update) the data store.
     documents = load_documents()
     chunks = split_documents(documents)
-    asyncio.run(add_to_chroma(chunks=chunks, embedding_func=embedding_function))
+    asyncio.run(aadd_to_chroma(chunks=chunks, embedding_func=embedding_function))
 
 
 def get_all_chunk_embeddings():
@@ -84,13 +91,16 @@ def split_documents(documents: list[Document]):
     return text_splitter.split_documents(documents)
 
 
-async def get_available_gpu_memory():
-    """Returns the available GPU memory in MB."""
-    info = nvmlDeviceGetMemoryInfo(gpu_handle)
-    return (info.free // (1024 * 1024))  # Convert to MB
+async def get_available_memory():
+    """Returns the available memory in MB (GPU if available, otherwise CPU RAM)."""
+    if gpu_available:
+        info = nvmlDeviceGetMemoryInfo(gpu_handle)
+        return info.free // (1024 * 1024)  # Convert bytes to MB
+    else:
+        return psutil.virtual_memory().available // (1024 * 1024)  # Convert bytes to MB
 
 
-async def add_to_chroma(chunks: list[Document], embedding_func):
+async def aadd_to_chroma(chunks: list[Document], embedding_func):
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_func)
 
     chunks_with_ids = calculate_chunk_ids(chunks)
@@ -104,18 +114,23 @@ async def add_to_chroma(chunks: list[Document], embedding_func):
 
     print(f"👉 Adding new documents: {len(new_chunks)}")
 
-    # Estimate GPU memory and determine batch size dynamically
-    total_gpu_memory = await get_available_gpu_memory()
-    batch_size = min(1000, total_gpu_memory // MODEL_SIZE_MB)
+    # Get available memory and adjust batch size
+    total_memory = await get_available_memory()
+    if gpu_available:
+        batch_size = min(500, total_memory // MODEL_SIZE_MB)  # Adjust batch size per model size
+        parallel_tasks = 2  # Adjust parallel tasks for GPU
+    else:
+        batch_size = max(100, min(500, total_memory // 500))  # Adjust batch size per 500MB CPU RAM
+        parallel_tasks = max(1, psutil.cpu_count(logical=False) // 2)  # Half of physical CPU cores
 
-    print(f"Estimated available GPU memory: {total_gpu_memory} MB")
-    print(f"Using batch size: {batch_size}")
+    print(f"Estimated available {'GPU' if gpu_available else 'CPU'} memory: {total_memory} MB")
+    print(f"Using batch size: {batch_size}, Parallel tasks: {parallel_tasks}")
 
     new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
-    semaphore = asyncio.Semaphore(2)  # Control concurrent tasks (Adjust as needed)
+    semaphore = asyncio.Semaphore(parallel_tasks)  # Control concurrent tasks
 
     async def process_batch(start, end):
-        """Process a batch of chunks asynchronously with GPU memory control."""
+        """Process a batch of chunks asynchronously with memory control."""
         async with semaphore:
             try:
                 await db.aadd_documents(
@@ -132,6 +147,8 @@ async def add_to_chroma(chunks: list[Document], embedding_func):
     ]
 
     await asyncio.gather(*tasks)
+    print("✅ All new documents added successfully.")
+
 
 def calculate_chunk_ids(chunks):
     # This will create IDs like "data/monopoly.pdf:6:2"

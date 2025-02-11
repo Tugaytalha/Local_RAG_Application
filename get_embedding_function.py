@@ -16,6 +16,7 @@ def get_embedding_function(model_name_or_path="atasoglu/roberta-small-turkish-cl
     """
     if model_name_or_path is None:
         model_name_or_path = "atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr"
+        print("Model name is not provided.")
 
     print(f"Using model: {model_name_or_path}")
     if model_type == "sentence_transformer":
