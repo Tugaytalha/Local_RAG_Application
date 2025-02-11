@@ -118,7 +118,7 @@ async def add_to_chroma(chunks: list[Document], embedding_func):
         """Process a batch of chunks asynchronously with GPU memory control."""
         async with semaphore:
             try:
-                await db.add_documents(
+                await db.aadd_documents(
                     new_chunks[start:end],
                     ids=new_chunk_ids[start:end],
                     show_progress=VERBOSE
