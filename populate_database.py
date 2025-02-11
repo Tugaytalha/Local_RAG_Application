@@ -6,6 +6,7 @@ from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 
+VERBOSE = True
 CHROMA_PATH = "chroma"
 DATA_PATH = "data"
 
@@ -64,7 +65,7 @@ def get_all_chunk_embeddings():
 def load_documents():
     document_loader = DirectoryLoader(
         DATA_PATH,
-        use_multithreading=True, )
+        use_multithreading=True, show_progress=VERBOSE)
     return document_loader.load()
 
 
@@ -101,7 +102,7 @@ def add_to_chroma(chunks: list[Document], embedding_func):
         print(f"👉 Adding new documents: {len(new_chunks)}")
         new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
 
-        db.add_documents(new_chunks, ids=new_chunk_ids)
+        db.add_documents(new_chunks, ids=new_chunk_ids, show_progress=VERBOSE)
 
         # # Add chunks asynchronously.
         # asyncio.run(db.aadd_documents(new_chunks, ids=new_chunk_ids))
