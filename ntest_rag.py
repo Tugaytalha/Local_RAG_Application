@@ -254,8 +254,8 @@ def main():
         import pandas as pd
         # Read queries from the Excel file
         queries_df = pd.read_excel(XLSX_PATH)
-        # Use question col as key and answer col as value
-        QUERIES = dict(zip(queries_df["question"], queries_df["answer"]))
+        # Use question col as key and answer col + empty list as value
+        QUERIES = dict(zip(queries_df["question"], queries_df["answer"].apply(lambda x: [x, []])))
         print(f"Queries read from the Excel file: {QUERIES}")
 
     for embedding_model_name in EMBEDDING_MODELS:
