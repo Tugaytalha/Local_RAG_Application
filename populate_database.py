@@ -7,6 +7,8 @@ from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
+import torch
+
 
 VERBOSE = True
 CHROMA_PATH = "chroma"
@@ -15,11 +17,11 @@ MODEL_SIZE_MB = 1100  # TODO: Make this dynamic based on the model size
 
 # Try to initialize NVML for GPU memory management
 gpu_available = False
-try:
+if torch.cuda.is_available():
     nvmlInit()
     gpu_handle = nvmlDeviceGetHandleByIndex(0)  # Select GPU 0
     gpu_available = True
-except Exception:
+else:
     print("⚠ No CUDA device detected. Falling back to CPU processing.")
 
 
@@ -101,6 +103,8 @@ async def get_available_memory():
 
 
 async def aadd_to_chroma(chunks: list[Document], embedding_func):
+    """Add chunks to the Chroma database asynchronously."""
+
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_func)
 
     chunks_with_ids = calculate_chunk_ids(chunks)
@@ -120,7 +124,7 @@ async def aadd_to_chroma(chunks: list[Document], embedding_func):
         batch_size = min(500, total_memory // MODEL_SIZE_MB)  # Adjust batch size per model size
         parallel_tasks = 2  # Adjust parallel tasks for GPU
     else:
-        batch_size = max(100, min(500, total_memory // 500))  # Adjust batch size per 500MB CPU RAM
+        batch_size = min(500, total_memory // MODEL_SIZE_MB)  # Adjust batch size per model size
         parallel_tasks = max(1, psutil.cpu_count(logical=False) // 2)  # Half of physical CPU cores
 
     print(f"Estimated available {'GPU' if gpu_available else 'CPU'} memory: {total_memory} MB")
