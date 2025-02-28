@@ -7,7 +7,7 @@ from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
-import torch
+
 
 
 VERBOSE = True
@@ -17,12 +17,15 @@ MODEL_SIZE_MB = 1100  # TODO: Make this dynamic based on the model size
 
 # Try to initialize NVML for GPU memory management
 gpu_available = False
-if torch.cuda.is_available():
-    nvmlInit()
-    gpu_handle = nvmlDeviceGetHandleByIndex(0)  # Select GPU 0
-    gpu_available = True
-else:
-    print("⚠ No CUDA device detected. Falling back to CPU processing.")
+use_cuda = False
+if use_cuda:
+    import torch
+    if torch.cuda.is_available():
+        nvmlInit()
+        gpu_handle = nvmlDeviceGetHandleByIndex(0)  # Select GPU 0
+        gpu_available = True
+    else:
+        print("⚠ No CUDA device detected. Falling back to CPU processing.")
 
 
 def main():

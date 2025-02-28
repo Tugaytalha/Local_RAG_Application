@@ -21,7 +21,7 @@ def get_embedding_function(model_name_or_path="atasoglu/roberta-small-turkish-cl
         print("Model name is not provided.")
 
     print(f"Using model: {model_name_or_path}")
-    if model_type == "sentence_transformer":
+    if model_type == "sentence_transformer" and use_cuda:
         import torch
         # Check if the cuda is available
         device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
@@ -37,7 +37,13 @@ def get_embedding_function(model_name_or_path="atasoglu/roberta-small-turkish-cl
 
         if device == "cuda":
             embeddings._client = torch.compile(embeddings._client)
-
+    elif model_type == "sentence_transformer":
+        embeddings = HuggingFaceEmbeddings(
+            model_name=model_name_or_path,
+            encode_kwargs={'normalize_embeddings': True
+                           },
+            model_kwargs={'trust_remote_code': True}
+        )
     elif model_type == "ollama":
         embeddings = OllamaEmbeddings(model="bge-m3")
     else:
