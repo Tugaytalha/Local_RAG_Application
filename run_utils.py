@@ -25,7 +25,7 @@ def evaluate_response(actual_response, expected_response):
     return evaluation_result.strip()
 
 
-def populate_database(reset: bool = True, model_name: str = "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr",
+def populate_database(reset: bool = True, model_name: str = "jinaai/jina-embeddings-v3",
                       model_type: str = "sentence_transformer") -> str:
     """
     Populates the database with the given model.

@@ -1,5 +1,5 @@
 import gradio as gr
-from run_utils import populate_database, query_rag
+from run_utils import populate_database, query_rag, get_embedding_function
 import os
 
 def process_query(question: str, embedding_function: str="emrecan/bert-base-turkish-cased-mean-nli-stsb-tr") -> tuple[str, gr.Dataframe]:
@@ -7,7 +7,11 @@ def process_query(question: str, embedding_function: str="emrecan/bert-base-turk
         return "Error: Database not found. Please populate the database first.", None
 
     try:
-        response, chunks = query_rag(question)
+        # Get the embedding function
+        embedding_func = get_embedding_function(model_name_or_path="jinaai/jina-embeddings-v3")
+
+        # Query the RAG model
+        response, chunks = query_rag(question, embedding_func)
 
         # Create a DataFrame for display
         df_data = [
@@ -30,7 +34,7 @@ with gr.Blocks(title="AlbaraKa Document Q&A System (Call Center)") as demo:
     with gr.Tab("Query Documents"):
         query_input = gr.Textbox(
             label="Enter your question",
-            placeholder="How much money does a player start with in Monopoly?"
+            placeholder="Müşterim hangi ATMlerden para çekebilir?"
         )
         query_button = gr.Button("Submit Query")
         output = gr.Textbox(label="Response")

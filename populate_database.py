@@ -79,7 +79,10 @@ def get_all_chunk_embeddings():
 def load_documents():
     document_loader = DirectoryLoader(
         DATA_PATH,
-        use_multithreading=True, show_progress=VERBOSE)
+        glob="*.pdf, *.docx, *.txt, *.doc, *.pptx, *.ppt, *.csv, *.xlsx, *.md, *.json",
+        use_multithreading=True,
+        show_progress=VERBOSE,
+    )
     return document_loader.load()
 
 
