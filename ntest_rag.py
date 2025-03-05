@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from run_utils import populate_database, evaluate_response, query_rag, get_embedding_function, get_all_chunk_embeddings
 
+
 RESULTS_PATH = "results/"
 
 FROM_XLSX = True
