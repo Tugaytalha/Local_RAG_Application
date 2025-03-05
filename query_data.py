@@ -41,12 +41,16 @@ def main():
     query_rag(args.query_text, embedding_function)
 
 
-def query_rag(query_text: str, embedding_function):
+def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", augment_query: bool = False):
     # Prepare the DB.
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
+    search_text = query_text
+    if augment_query:
+        search_text = augment_query_generated(query_text, model=model)
+
     # Search the DB.
-    results = db.similarity_search_with_score(query_text, k=5)
+    results = db.similarity_search_with_score(search_text, k=5)
 
     # Format chunks with their sources and scores
     chunks_with_metadata = []
@@ -71,12 +75,13 @@ def query_rag(query_text: str, embedding_function):
     
     return response_text, chunks_with_metadata
 
-def augment_query_generated(query):
+
+def augment_query_generated(query, model: str = "llama3.2:3b"):
     prompt = f"""You are a helpful expert financial research assistant. 
    Provide an example answer to the given question, that might be found in a document like an annual report. 
    Question: {query}"""
 
-    model = Ollama(model="llama3.2:3b")
+    model = Ollama(model=model)
     response_text = model.invoke(prompt)
 
     formatted_response = f"Response: {response_text}\n"
