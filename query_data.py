@@ -71,6 +71,20 @@ def query_rag(query_text: str, embedding_function):
     
     return response_text, chunks_with_metadata
 
+def augment_query_generated(query):
+    prompt = f"""You are a helpful expert financial research assistant. 
+   Provide an example answer to the given question, that might be found in a document like an annual report. 
+   Question: {query}"""
+
+    model = Ollama(model="llama3.2:3b")
+    response_text = model.invoke(prompt)
+
+    formatted_response = f"Response: {response_text}\n"
+    if VERBOSE:
+        print(formatted_response)
+
+    return response_text
+
 
 if __name__ == "__main__":
     main()

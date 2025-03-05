@@ -4,7 +4,8 @@ import umap
 import numpy as np
 import matplotlib.pyplot as plt
 from run_utils import populate_database, evaluate_response, query_rag, get_embedding_function, get_all_chunk_embeddings
-
+import warnings
+warnings.filterwarnings("ignore")
 
 RESULTS_PATH = "results/"
 
@@ -94,8 +95,9 @@ EMBEDDING_MODELS = [
     ###"atasoglu/distilbert-base-turkish-cased-nli-stsb-tr",
     ## "atasoglu/xlm-roberta-base-nli-stsb-tr",
     ## "atasoglu/mbert-base-cased-nli-stsb-tr",
-    "jinaai/jina-embeddings-v3",
-    # "Omerhan/intfloat-fine-tuned-14376-v4",
+    # "jinaai/jina-embeddings-v3",
+    "Omerhan/intfloat-fine-tuned-14376-v4",
+    "intfloat/multilingual-e5-large-instruct",
     ###"atasoglu/turkish-base-bert-uncased-mean-nli-stsb-tr",
 ]
 

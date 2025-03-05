@@ -4,7 +4,7 @@ from langchain_ollama.embeddings import OllamaEmbeddings
 
 
 def get_embedding_function(model_name_or_path="atasoglu/roberta-small-turkish-clean-uncased-nli-stsb-tr",
-                           model_type="sentence_transformer", use_cuda=False):  # "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr"
+                           model_type="sentence_transformer", use_cuda=True):  # "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr"
     """
     Get embedding function either from HuggingFace or local directory
     
