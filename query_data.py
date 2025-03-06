@@ -133,6 +133,48 @@ def augment_query(query: str, augmentation: str, model: str = "llama3.2:3b"):
 
     return generate_with_llm(prompt, model=model)
 
+def generate_multi_query(query: str, model: str = "llama3.2:3b"):
+    prompt = f"""You are an advanced banking knowledge assistant optimizing document retrieval for a 
+            Retrieval-Augmented Generation (RAG) system. A user has entered a query related to banking services, 
+            financial regulations, loans, compliance, legals, or risk management. However, the query may be unclear, broad, or 
+            lacking specificity. Your task is to generate three well-structured queries that cover different but relevant 
+            aspects of the original query to improve retrieval.
+
+            Instructions:
+
+            Rephrase the original query while maintaining the intent but targeting different possible document formulations.
+            Expand coverage by incorporating industry-specific terminology, regulatory terms, and relevant variations.
+            Disambiguate vague queries by assuming possible user intents and generating queries to address them.
+            Structure queries effectively to ensure optimal retrieval performance in a banking document database.
+            Example 1:
+            User Query: "What are the rules for opening a corporate bank account?"
+
+            Generated Multi-Queries:
+
+            "Corporate bank account opening process and KYC documentation requirements."
+            "Regulatory guidelines for corporate account eligibility and compliance."
+            "Business banking onboarding policies and required financial records."
+            Example 2:
+            User Query: "How does fraud detection work in banking?"
+
+            Generated Multi-Queries:
+
+            "Bank fraud detection techniques and transaction monitoring systems."
+            "AML compliance and risk-based fraud detection methods in financial institutions."
+            "Machine learning applications in banking fraud prevention and anomaly detection."
+            Make sure each query is distinct, optimized for search, and relevant for retrieving high-quality banking documents.
+
+            Ensure the queries maintain relevance, improve searchability, and align with banking documentation terminology.
+            Use the same language as the original query. Write only the three augmented queries and do not add any words 
+            except the augmented queries. Separate each query with a newline. 
+            Provide concise single-topic questions (withouth compounding sentences) that cover various aspects of the topic. 
+            Ensure each question is complete and directly related to the original inquiry. 
+            List each question on a separate line without numbering.
+            Query: {query}"""
+
+    response_text = generate_with_llm(prompt, model=model)
+
+    return response_text.split("\n")
 
 if __name__ == "__main__":
     main()
