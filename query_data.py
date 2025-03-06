@@ -41,13 +41,20 @@ def main():
     query_rag(args.query_text, embedding_function)
 
 
-def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", augment_query: bool = False):
+def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", augmentation: str = None):
+    """
+
+    :param query_text: Prompt text given by user
+    :param embedding_function:  Embedding function itself to use in the vector database
+    :param model: LLM model name to use from ollama.Default is llama3.2:3b
+    :param augmentation: "query" or "response" to augment the query or response, None(default) to not augment
+    :return: Response text and chunks with metadata
+    """
+
     # Prepare the DB.
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
-    search_text = query_text
-    if augment_query:
-        search_text = augment_query_generated(query_text, model=model)
+    search_text = augment_query(query_text, model=model, augmentation=augmentation)
 
     # Search the DB.
     results = db.similarity_search_with_score(search_text, k=5)
@@ -76,17 +83,36 @@ def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", a
     return response_text, chunks_with_metadata
 
 
-def augment_query_generated(query, model: str = "llama3.2:3b"):
-    prompt = f"""You are a helpful expert financial research assistant. 
-   Provide an example answer to the given question, that might be found in a document like an annual report. 
-   Question: {query}"""
+def augment_query(query: str, augmentation: str, model: str = "llama3.2:3b"):
+    if augmentation is None:
+        return query
+    if augmentation.lower() == "answer":
+        prompt = f"""You are a helpful expert financial research assistant. 
+        Provide an example answer to the given question, that might be found in a document like an annual report. 
+        Question: {query}"""
+    elif augmentation.lower() == "query":
+        prompt = f"""Given a user's query related to banking operations, financial services, compliance, or customer transactions, generate an expanded version of the query that includes:
+        
+        Synonyms (e.g., "loan" → "credit facility" or "mortgage financing")
+        Department-specific terminology (e.g., "KYC" → "Know Your Customer compliance process")
+        Regulatory references (e.g., "AML" → "Anti-Money Laundering regulations as per [jurisdiction]")
+        Contextual keywords (e.g., if a query is about 'fraud detection,' include 'transaction monitoring,' 'risk assessment,' and 'unauthorized access')
+        Alternative phrasings that match document language
+        Structured categories where applicable (e.g., linking "home loan" with "mortgage rates," "loan tenure," and "EMI calculations")
+        Example Input:
+        "What are the rules for opening a corporate bank account?"
+        
+        Expanded Query Output:
+        "Corporate bank account opening guidelines, business banking KYC requirements, corporate account eligibility criteria, required documentation for corporate accounts, company registration verification for banking, commercial account opening compliance, business entity bank account regulations."
+        
+        Ensure the expanded query maintains relevance, improves searchability, and aligns with banking documentation terminology. 
+        Also use same language as the query.
+        Query: {query}"""
+    else:
+        raise ValueError(f"Invalid augmentation type: {augmentation}")
 
     model = Ollama(model=model)
     response_text = model.invoke(prompt)
-
-    formatted_response = f"Response: {response_text}\n"
-    if VERBOSE:
-        print(formatted_response)
 
     return response_text
 
