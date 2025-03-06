@@ -1,4 +1,4 @@
-from query_data import query_rag                               # Don't delete, to use all utils with the same import
+from query_data import QueryData                               # Don't delete, to use all utils with the same import
 from get_embedding_function import get_embedding_function      # Don't delete, to use all utils with the same import
 from langchain_ollama import OllamaLLM as Ollama
 import sys

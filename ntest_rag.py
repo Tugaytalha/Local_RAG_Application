@@ -3,7 +3,7 @@ from docx import Document
 import umap
 import numpy as np
 import matplotlib.pyplot as plt
-from run_utils import populate_database, evaluate_response, query_rag, get_embedding_function, get_all_chunk_embeddings
+from run_utils import populate_database, evaluate_response, QueryData, get_embedding_function, get_all_chunk_embeddings
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -195,7 +195,7 @@ def try_rag_with_embeddings(embedding_model_name):
         query_embeddings.append(query_embedding)
 
         try:
-            response, retrieved_chunks = query_rag(query, embedding)
+            response, retrieved_chunks = QueryData.query_rag(query, embedding)
         except Exception as e:
             print(f"Error during query processing: {e}")
             response = "Error during query processing"

@@ -1,8 +1,12 @@
 import gradio as gr
-from run_utils import populate_database, query_rag, get_embedding_function
+import pandas as pd
+
+from run_utils import populate_database, QueryData, get_embedding_function
 import os
 
-def process_query(question: str, embedding_function: str="emrecan/bert-base-turkish-cased-mean-nli-stsb-tr") -> tuple[str, gr.Dataframe]:
+
+def process_query(question: str, embedding_function: str = "emrecan/bert-base-turkish-cased-mean-nli-stsb-tr") -> tuple[
+    str, gr.Dataframe]:
     if not os.path.exists("chroma"):
         return "Error: Database not found. Please populate the database first.", None
 
@@ -11,7 +15,7 @@ def process_query(question: str, embedding_function: str="emrecan/bert-base-turk
         embedding_func = get_embedding_function(model_name_or_path="jinaai/jina-embeddings-v3")
 
         # Query the RAG model
-        response, chunks = query_rag(question, embedding_func)
+        response, chunks = QueryData.query_rag(question, embedding_func)
 
         # Create a DataFrame for display
         df_data = [
@@ -21,7 +25,7 @@ def process_query(question: str, embedding_function: str="emrecan/bert-base-turk
 
         return response, gr.Dataframe(
             headers=['Source', 'Content', 'Relevance Score'],
-            value=df_data
+            value=pd.DataFrame(df_data)
         )
     except Exception as e:
         return f"Error processing query: {str(e)}", None
