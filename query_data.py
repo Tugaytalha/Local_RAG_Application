@@ -1,4 +1,5 @@
 import argparse
+
 from langchain.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
 from langchain_ollama import OllamaLLM as Ollama
@@ -57,7 +58,32 @@ def generate_with_llm(prompt: str, model: str = "llama3.2:3b"):
     return response_text
 
 
-def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", augmentation: str = None):
+def merge_duplicates(docs_scores):
+    """
+    Merge(remove) duplicate documents and average their scores.
+
+    :param docs_scores:
+    :return: List of unique documents with their average scores
+    """
+    from collections import defaultdict
+    doc_dict = defaultdict(list)  # Stores scores for each unique id
+    doc_objects = {}  # Stores a single doc object for each id
+
+    # Aggregate scores for each unique document ID
+    for doc, score in docs_scores:
+        doc_id = doc.metadata.get("id", None)
+        if doc_id is not None:
+            doc_dict[doc_id].append(score)
+            doc_objects[doc_id] = doc  # Keep one doc object per id
+
+    # Compute average score and reconstruct the list
+    result = [(doc_objects[doc_id], sum(scores) / len(scores)) for doc_id, scores in doc_dict.items()]
+    return result
+
+
+
+def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", augmentation: str = None,
+              multi_query: bool = False):
     """
     Query the RAG system with the given query text and get the response.
 
@@ -65,6 +91,9 @@ def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", a
     :param embedding_function:  Embedding function itself to use in the vector database
     :param model: LLM model name to use from ollama.Default is llama3.2:3b
     :param augmentation: "query" or "response" to augment the query or response, None(default) to not augment
+    :param multi_query: True to generate multiple queries to search in VectorDB, False(default) to generate single query
+    . Useful for ambiguous queries or queries that needs retrieval from various documents.
+
     :return: Response text and chunks with metadata
     """
 
@@ -73,8 +102,25 @@ def query_rag(query_text: str, embedding_function, model: str = "llama3.2:3b", a
 
     search_text = augment_query(query_text, model=model, augmentation=augmentation)
 
-    # Search the DB.
-    results = db.similarity_search_with_score(search_text, k=5)
+    results = []
+    if multi_query:
+        # Generate multiple queries.
+        queries = generate_multi_query(search_text, model=model)
+
+        queries = [query.strip() for query in queries] + [search_text]
+
+        # Search the DB with each query (doesn't include the duplicate documents).
+        for query in queries:
+            results.extend(db.similarity_search_with_score(query, k=4))
+
+        # Remove duplicates.
+        results = merge_duplicates(results)
+        if VERBOSE:
+            print(f"Number of unique documents found: {len(results)}")
+
+    else:
+        # Search the DB.
+        results = db.similarity_search_with_score(search_text, k=5)
 
     # Format chunks with their sources and scores
     chunks_with_metadata = []
@@ -133,6 +179,7 @@ def augment_query(query: str, augmentation: str, model: str = "llama3.2:3b"):
 
     return generate_with_llm(prompt, model=model)
 
+
 def generate_multi_query(query: str, model: str = "llama3.2:3b"):
     prompt = f"""You are an advanced banking knowledge assistant optimizing document retrieval for a 
             Retrieval-Augmented Generation (RAG) system. A user has entered a query related to banking services, 
@@ -174,7 +221,11 @@ def generate_multi_query(query: str, model: str = "llama3.2:3b"):
 
     response_text = generate_with_llm(prompt, model=model)
 
+    if VERBOSE:
+        print(response_text)
+
     return response_text.split("\n")
+
 
 if __name__ == "__main__":
     main()
