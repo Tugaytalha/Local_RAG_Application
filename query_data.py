@@ -155,7 +155,7 @@ class QueryData:
         :param model: LLM model name to use from ollama.Default is llama3.2:3b
         :return: Augmented query text
         """
-        if augmentation is None:
+        if augmentation is None or augmentation.lower() == "none":
             return query
         if augmentation.lower() == "answer":
             prompt = f"""You are a helpful expert financial research assistant. 

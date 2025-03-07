@@ -3,8 +3,10 @@ import pandas as pd
 import os
 import time
 from pathlib import Path
+import numpy as np
 
-from run_utils import populate_database, QueryData, get_embedding_function
+from run_utils import populate_database, QueryData, get_embedding_function, visualize_query_embeddings
+from populate_database import get_all_chunk_embeddings
 from shutil import copy2
 
 # Configuration constants
@@ -19,9 +21,10 @@ EMBEDDING_MODELS = [
 
 LLM_MODELS = [
     "llama3.2:3b",
-    "llama3.2:8b",
+    "llama3.2:1b",
     "llama3.1:8b",
-    "gemma:7b"
+    "llama3.3",
+    "llama3.2-vision"
 ]
 
 QUERY_AUGMENTATION_OPTIONS = [
@@ -32,19 +35,20 @@ QUERY_AUGMENTATION_OPTIONS = [
 
 DATA_PATH = "data"
 
+
 def process_query(
         question: str,
         embedding_model: str,
         llm_model: str,
         use_multi_query: bool,
         query_augmentation: str
-) -> tuple[str, gr.Dataframe, str]:
+) -> tuple[str, gr.Dataframe, str, str]:
     if not os.path.exists("chroma"):
-        return "Error: Database not found. Please populate the database first.", None, "❌ Database not found"
+        return "Error: Database not found. Please populate the database first.", None, "❌ Database not found", None
 
     start_time = time.time()
     status_msg = "🔍 Processing query..."
-    
+
     try:
         # Get the embedding function
         embedding_func = get_embedding_function(
@@ -57,7 +61,7 @@ def process_query(
 
         # Query the RAG model
         response, chunks = QueryData.query_rag(
-            query_text=question, 
+            query_text=question,
             embedding_function=embedding_func,
             model=llm_model,
             augmentation=actual_augmentation,
@@ -70,6 +74,30 @@ def process_query(
             for chunk in chunks
         ]
 
+        # Generate visualization
+        visualization_path = None
+        # try:
+        # Get all chunk embeddings from the database
+        all_chunk_data = get_all_chunk_embeddings()
+        if any(all_chunk_data) and 'embeddings' in all_chunk_data:
+            all_chunk_embeddings = np.array(all_chunk_data["embeddings"])
+
+            # Get query embedding
+            query_embedding = np.array(embedding_func.embed_query(question))
+
+            # Get embeddings for retrieved chunks
+            retrieved_embeddings = np.array([embedding_func.embed_query(chunk['content']) for chunk in chunks])
+
+            # Create visualization
+            visualization_path = visualize_query_embeddings(
+                question,
+                query_embedding,
+                all_chunk_embeddings,
+                retrieved_embeddings
+            )
+        # except Exception as viz_error:
+        #     print(f"Visualization error (non-critical): {str(viz_error)}")
+
         # Calculate sources for display
         sources = ", ".join(set([chunk['source'] for chunk in chunks]))
         elapsed_time = time.time() - start_time
@@ -78,17 +106,18 @@ def process_query(
         return response, gr.Dataframe(
             headers=['Source', 'Content', 'Relevance Score'],
             value=df_data
-        ), status_msg
+        ), status_msg, visualization_path
     except Exception as e:
-        return f"Error processing query: {str(e)}", None, f"❌ Error: {str(e)}"
+        return f"Error processing query: {str(e)}", None, f"❌ Error: {str(e)}", None
+
 
 def handle_file_upload(files, reset_db):
     if not files:
         return "No files uploaded."
-    
+
     # Create data directory if it doesn't exist
     os.makedirs(DATA_PATH, exist_ok=True)
-    
+
     # Copy uploaded files to the data directory
     file_count = 0
     for file in files:
@@ -99,19 +128,21 @@ def handle_file_upload(files, reset_db):
             file_count += 1
         except Exception as e:
             return f"Error copying file {file.name}: {str(e)}"
-    
+
     return f"✅ Successfully uploaded {file_count} files to the data directory."
+
 
 def populate_db_with_params(reset_db, embedding_model):
     try:
         result = populate_database(
-            reset=reset_db, 
+            reset=reset_db,
             model_name=embedding_model,
             model_type="sentence_transformer"
         )
         return f"✅ {result}"
     except Exception as e:
         return f"❌ Error: {str(e)}"
+
 
 # Create the Gradio interface with improved styling
 with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as demo:
@@ -122,7 +153,7 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
         Upload documents, ask questions, and get AI-powered answers based on your document content.
         """
     )
-    
+
     with gr.Tab("Query Documents"):
         with gr.Row():
             with gr.Column(scale=2):
@@ -131,67 +162,78 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
                     placeholder="Müşterim hangi ATMlerden para çekebilir?",
                     lines=3
                 )
-            
             with gr.Column(scale=1):
-                with gr.Box():
+                status_display = gr.Textbox(label="Status", interactive=False, lines=3)
+
+        query_button = gr.Button("Submit Query", variant="primary", scale=1)
+        
+        with gr.Row():
+            with gr.Column(scale=2):
+                gr.Markdown("### Response")
+                output = gr.Textbox(label="AI Response", lines=5)
+
+        with gr.Row():
+            with gr.Column(scale=1):
+                with gr.Group():
                     gr.Markdown("### Model Settings")
-                    embedding_dropdown = gr.Dropdown(
-                        choices=EMBEDDING_MODELS,
-                        value=EMBEDDING_MODELS[0],
-                        label="Embedding Model",
-                        info="Select the embedding model for semantic search"
-                    )
-                    
                     llm_dropdown = gr.Dropdown(
                         choices=LLM_MODELS,
-                        value=LLM_MODELS[0],
+                        value=LLM_MODELS[2],
                         label="LLM Model",
                         info="Select the large language model for response generation"
                     )
-        
-        with gr.Row():
+
+                    embedding_dropdown = gr.Dropdown(
+                        choices=EMBEDDING_MODELS,
+                        value=EMBEDDING_MODELS[1],
+                        label="Embedding Model",
+                        info="Select the embedding model for semantic search (have to be same as vectorDB model)"
+                    )
+
             with gr.Column(scale=1):
-                with gr.Box():
+                with gr.Group():
                     gr.Markdown("### Advanced Options")
                     multi_query_checkbox = gr.Checkbox(
-                        label="Use Multi-Query Generation", 
+                        label="Use Multi-Query Generation",
                         value=False,
                         info="Generate multiple search queries to improve retrieval for complex questions"
                     )
-                    
+
                     query_augmentation_dropdown = gr.Dropdown(
                         choices=QUERY_AUGMENTATION_OPTIONS,
                         value=QUERY_AUGMENTATION_OPTIONS[0],
                         label="Query Augmentation",
                         info="How to augment the query for better search results"
                     )
-            
-            with gr.Column(scale=1):
-                query_button = gr.Button("Submit Query", variant="primary", scale=1)
-                status_display = gr.Textbox(label="Status", interactive=False)
-        
-        gr.Markdown("### Response")
-        output = gr.Textbox(label="AI Response", lines=5)
-        
-        gr.Markdown("### Retrieved Chunks")
-        chunks_output = gr.Dataframe(
-            headers=['Source', 'Content', 'Relevance Score'],
-            label="Retrieved Document Chunks",
-            wrap=True
-        )
-        
+
+        with gr.Row():
+            with gr.Column(scale=2):
+                gr.Markdown("### Visualization")
+                viz_output = gr.Image(
+                    label="Query-Document Visualization",
+                    show_download_button=True,
+                    type="filepath"
+                )
+                gr.Markdown("### Retrieved Chunks")
+                chunks_output = gr.Dataframe(
+                    headers=['Source', 'Content', 'Relevance Score'],
+                    label="Retrieved Document Chunks",
+                    wrap=True,
+                    column_widths=[10, 30, 5]
+                )
+
         query_button.click(
             fn=process_query,
             inputs=[
-                query_input, 
-                embedding_dropdown, 
-                llm_dropdown, 
-                multi_query_checkbox, 
+                query_input,
+                embedding_dropdown,
+                llm_dropdown,
+                multi_query_checkbox,
                 query_augmentation_dropdown
             ],
-            outputs=[output, chunks_output, status_display]
+            outputs=[output, chunks_output, status_display, viz_output]
         )
-    
+
     with gr.Tab("Document Management"):
         with gr.Row():
             with gr.Column():
@@ -203,36 +245,36 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
                 )
                 upload_button = gr.Button("Upload Files", variant="primary")
                 upload_status = gr.Textbox(label="Upload Status", interactive=False)
-            
+
             with gr.Column():
                 gr.Markdown("### Database Control")
-                with gr.Box():
+                with gr.Group():
                     reset_checkbox = gr.Checkbox(
-                        label="Reset Database", 
+                        label="Reset Database",
                         value=False,
                         info="Check to completely reset the database before populating"
                     )
                     db_embedding_dropdown = gr.Dropdown(
                         choices=EMBEDDING_MODELS,
-                        value=EMBEDDING_MODELS[0],
+                        value=EMBEDDING_MODELS[1],
                         label="Embedding Model for Database",
                         info="Select the embedding model to use for the vector database"
                     )
                     populate_button = gr.Button("Populate Database", variant="primary")
                     status_output = gr.Textbox(label="Population Status", interactive=False)
-    
+
         upload_button.click(
             fn=handle_file_upload,
             inputs=[file_upload, reset_checkbox],
             outputs=upload_status
         )
-        
+
         populate_button.click(
             fn=populate_db_with_params,
             inputs=[reset_checkbox, db_embedding_dropdown],
             outputs=status_output
         )
-    
+
     with gr.Tab("About"):
         gr.Markdown(
             """
