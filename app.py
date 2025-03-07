@@ -32,19 +32,20 @@ QUERY_AUGMENTATION_OPTIONS = [
 
 DATA_PATH = "data"
 
+
 def process_query(
-    question: str, 
-    embedding_model: str,
-    llm_model: str,
-    use_multi_query: bool,
-    query_augmentation: str
+        question: str,
+        embedding_model: str,
+        llm_model: str,
+        use_multi_query: bool,
+        query_augmentation: str
 ) -> tuple[str, gr.Dataframe, str]:
     if not os.path.exists("chroma"):
         return "Error: Database not found. Please populate the database first.", None, "❌ Database not found"
 
     start_time = time.time()
     status_msg = "🔍 Processing query..."
-    
+
     try:
         # Get the embedding function
         embedding_func = get_embedding_function(
@@ -57,7 +58,7 @@ def process_query(
 
         # Query the RAG model
         response, chunks = QueryData.query_rag(
-            query_text=question, 
+            query_text=question,
             embedding_function=embedding_func,
             model=llm_model,
             augmentation=actual_augmentation,
@@ -82,13 +83,14 @@ def process_query(
     except Exception as e:
         return f"Error processing query: {str(e)}", None, f"❌ Error: {str(e)}"
 
+
 def handle_file_upload(files, reset_db):
     if not files:
         return "No files uploaded."
-    
+
     # Create data directory if it doesn't exist
     os.makedirs(DATA_PATH, exist_ok=True)
-    
+
     # Copy uploaded files to the data directory
     file_count = 0
     for file in files:
@@ -99,19 +101,21 @@ def handle_file_upload(files, reset_db):
             file_count += 1
         except Exception as e:
             return f"Error copying file {file.name}: {str(e)}"
-    
+
     return f"✅ Successfully uploaded {file_count} files to the data directory."
+
 
 def populate_db_with_params(reset_db, embedding_model):
     try:
         result = populate_database(
-            reset=reset_db, 
+            reset=reset_db,
             model_name=embedding_model,
             model_type="sentence_transformer"
         )
         return f"✅ {result}"
     except Exception as e:
         return f"❌ Error: {str(e)}"
+
 
 # Create the Gradio interface with improved styling
 with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as demo:
@@ -122,15 +126,27 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
         Upload documents, ask questions, and get AI-powered answers based on your document content.
         """
     )
-    
+
     with gr.Tab("Query Documents"):
         with gr.Row():
             with gr.Column(scale=2):
                 query_input = gr.Textbox(
                     label="Enter your question",
                     placeholder="Müşterim hangi ATMlerden para çekebilir?",
-                    lines=3
+                    lines=4
                 )
+            with gr.Column(scale=1):
+                status_display = gr.Textbox(label="Status", interactive=False, lines=4)
+
+        query_button = gr.Button("Submit Query", variant="primary", scale=1)
+        with gr.Row():
+
+            with gr.Column(scale=2):
+                gr.Markdown("### Response")
+                output = gr.Textbox(label="AI Response", lines=5)
+
+        with gr.Row():
+            with gr.Column(scale=1):
                 with gr.Group():
                     gr.Markdown("### Model Settings")
                     embedding_dropdown = gr.Dropdown(
@@ -140,7 +156,7 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
                         info="Select the embedding model for semantic search"
                     )
 
-            # with gr.Column(scale=1):
+                    # with gr.Column(scale=1):
 
                     llm_dropdown = gr.Dropdown(
                         choices=LLM_MODELS,
@@ -148,50 +164,43 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
                         label="LLM Model",
                         info="Select the large language model for response generation"
                     )
-        
-        with gr.Row():
             with gr.Column(scale=1):
                 with gr.Group():
                     gr.Markdown("### Advanced Options")
                     multi_query_checkbox = gr.Checkbox(
-                        label="Use Multi-Query Generation", 
+                        label="Use Multi-Query Generation",
                         value=False,
                         info="Generate multiple search queries to improve retrieval for complex questions"
                     )
-                    
+
                     query_augmentation_dropdown = gr.Dropdown(
                         choices=QUERY_AUGMENTATION_OPTIONS,
                         value=QUERY_AUGMENTATION_OPTIONS[0],
                         label="Query Augmentation",
                         info="How to augment the query for better search results"
                     )
-            
-            with gr.Column(scale=1):
-                query_button = gr.Button("Submit Query", variant="primary", scale=1)
-                status_display = gr.Textbox(label="Status", interactive=False)
-        
-        gr.Markdown("### Response")
-        output = gr.Textbox(label="AI Response", lines=5)
-        
+
+
+
         gr.Markdown("### Retrieved Chunks")
         chunks_output = gr.Dataframe(
             headers=['Source', 'Content', 'Relevance Score'],
             label="Retrieved Document Chunks",
             wrap=True
         )
-        
+
         query_button.click(
             fn=process_query,
             inputs=[
-                query_input, 
-                embedding_dropdown, 
-                llm_dropdown, 
-                multi_query_checkbox, 
+                query_input,
+                embedding_dropdown,
+                llm_dropdown,
+                multi_query_checkbox,
                 query_augmentation_dropdown
             ],
             outputs=[output, chunks_output, status_display]
         )
-    
+
     with gr.Tab("Document Management"):
         with gr.Row():
             with gr.Column():
@@ -203,12 +212,12 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
                 )
                 upload_button = gr.Button("Upload Files", variant="primary")
                 upload_status = gr.Textbox(label="Upload Status", interactive=False)
-            
+
             with gr.Column():
                 gr.Markdown("### Database Control")
                 with gr.Group():
                     reset_checkbox = gr.Checkbox(
-                        label="Reset Database", 
+                        label="Reset Database",
                         value=False,
                         info="Check to completely reset the database before populating"
                     )
@@ -220,19 +229,19 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
                     )
                     populate_button = gr.Button("Populate Database", variant="primary")
                     status_output = gr.Textbox(label="Population Status", interactive=False)
-    
+
         upload_button.click(
             fn=handle_file_upload,
             inputs=[file_upload, reset_checkbox],
             outputs=upload_status
         )
-        
+
         populate_button.click(
             fn=populate_db_with_params,
             inputs=[reset_checkbox, db_embedding_dropdown],
             outputs=status_output
         )
-    
+
     with gr.Tab("About"):
         gr.Markdown(
             """
