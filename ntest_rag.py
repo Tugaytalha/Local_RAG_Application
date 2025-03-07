@@ -106,9 +106,6 @@ def visualize_queries(queries, query_embeddings, all_chunk_embeddings, retrieved
     """
     Creates subplots for each query, visualizing its relationship with all chunks, retrieved chunks, and expected chunks.
     """
-    """
-    Creates subplots for each query, visualizing its relationship with all chunks, retrieved chunks, and expected chunks.
-    """
     num_queries = len(queries)
     cols = 2  # Number of columns for subplots
     rows = (num_queries + 1) // cols  # Compute required rows dynamically
