@@ -3,7 +3,7 @@ langchain~=0.3.15
 chromadb # Vector storage
 pytest~=8.3.4
 langchain-community
-gradio~=5.11.0
+gradio
 sentence-transformers>=2.2.2
 langchain_chroma>=0.1.2
 einops~=0.8.0

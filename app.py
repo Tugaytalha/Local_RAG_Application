@@ -24,7 +24,8 @@ LLM_MODELS = [
     "llama3.2:1b",
     "llama3.1:8b",
     "llama3.3",
-    "llama3.2-vision"
+    "llama3.2-vision",
+    "gemma3"
 ]
 
 QUERY_AUGMENTATION_OPTIONS = [
@@ -160,7 +161,7 @@ with gr.Blocks(title="AlbaraKa Document Q&A System", theme=gr.themes.Soft()) as 
                 query_input = gr.Textbox(
                     label="Enter your question",
                     placeholder="Müşterim hangi ATMlerden para çekebilir?",
-                    lines=3
+                    lines=4
                 )
             with gr.Column(scale=1):
                 status_display = gr.Textbox(label="Status", interactive=False, lines=3)
